@@ -1,0 +1,67 @@
+--1. IF문을 사용하여 KING 사원의 부서번호를 얻어와서 부서 번호에 따른 부서명을 출력
+DECLARE
+    EMP_NAME EMPLOYEE.ENAME%TYPE;
+    DEPT_NUM NUMBER;
+    DEPT_NAME VARCHAR2(14 BYTE);
+BEGIN
+    SELECT ENAME,DNO
+        INTO EMP_NAME, DEPT_NUM
+    FROM EMPLOYEE
+    WHERE ENAME = 'KING';
+    
+IF DEPT_NUM = 10 THEN
+    DEPT_NAME := 'ACCOUNTING';
+    ELSIF DEPT_NUM = 20 THEN
+    DEPT_NAME := 'RESEARCH';
+    ELSIF DEPT_NUM = 30 THEN
+    DEPT_NAME := 'SALE';
+    ELSIF DEPT_NUM = 40 THEN
+    DEPT_NAME := 'OPERATIONS';
+END IF;
+    DBMS_OUTPUT.PUT_LINE(EMP_NAME || ', ' || DEPT_NUM || ', ' || DEPT_NAME);
+END;
+
+
+--2. BASIC LOOP문으로 1부터 10사이의 자연수의 합을 구하여 출력
+DECLARE
+    VN_CNT NUMBER := 0;
+    VN_SUM NUMBER := 0;
+    
+BEGIN
+    LOOP
+        VN_CNT := VN_CNT +1; 
+        VN_SUM := VN_SUM + VN_CNT;
+        EXIT WHEN VN_CNT >=10;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('1부터 10까지의 합은 ' || VN_SUM);
+END;
+
+--3. FOR LOOP문으로 1부터 10사이의 자연수의 합을 구하여 출력
+DECLARE
+    VN_CNT NUMBER := 0;
+    VN_SUM NUMBER := 0;
+    
+BEGIN
+    FOR VN_CNT IN 1..10
+      LOOP
+        VN_SUM := VN_SUM + VN_CNT;
+        EXIT WHEN VN_CNT >=10;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('1부터 10까지의 합은 ' || VN_SUM);
+END;
+
+--4. WHILE LOOP문으로 1부터 10사이의 자연수의 합을 구하여 출력
+DECLARE
+    VN_CNT NUMBER := 0;
+    VN_SUM NUMBER := 0;
+    
+BEGIN
+    WHILE VN_CNT < 10
+    LOOP
+    VN_CNT := VN_CNT +1; 
+    VN_SUM := VN_SUM + VN_CNT;
+    
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('1부터 10까지의 합은 ' || VN_SUM);
+END;
+
