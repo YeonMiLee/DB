@@ -1,0 +1,97 @@
+--QUIZ_chap05_ex2
+--1.모든 사원의 급여 최고액, 최저액, 총액 및 평균 급여 출력
+-- MAXIMUM/ MINIMUM, SUM, AVERAGE(정수로 반올림)
+ SELECT MAX(SALARY) AS MAXIMUM ,MIN(SALARY) AS MINIMUM, SUM(SALARY) AS SUM, ROUND(AVG(SALARY)) AS AVERAGE
+   FROM EMPLOYEE;
+
+--2.담당업무 유형별로 급여 최고액 최저액 총액 및 평균액 출력
+-- MAXIMUM/ MINIMUM, SUM, AVERAGE(정수로 반올림)
+ SELECT JOB, 
+        MAX(SALARY) AS MAXIMUM,
+        MIN(SALARY) AS MINIMUM,
+        SUM(SALARY) AS SUM,
+        ROUND(AVG(SALARY)) AS AVERAGE       
+   FROM EMPLOYEE 
+ GROUP BY JOB;   
+
+--3.COUNT(*) = 담당업무가 동일한 사원 수 출력
+ SELECT JOB, COUNT(*)
+   FROM EMPLOYEE 
+ GROUP BY JOB;   
+
+--4.관리자의 수/ 칼럼별칭-(COUNT(MANAGER))
+ SELECT COUNT(MANAGER) AS MANAGER
+   FROM EMPLOYEE; 
+--수정(중복제거 위해 DISTINCT 사용)
+ SELECT COUNT(DISTINCT(MANAGER)) AS MANAGER
+   FROM EMPLOYEE;
+
+--5.급여 (최고액 ㅡ 최저액 = DIFFERENCE)
+ SELECT MAX(SALARY)-MIN(SALARY) DIFFERENCE
+   FROM EMPLOYEE; 
+
+--6.직급별 사원의 최저 급여 출력
+--(관리자 없는 사원 및 최저 급여가 2000미만인 그룹은 제외/ 내림차순 정렬)
+ SELECT JOB,
+        MIN(SALARY) AS MINIMUM
+   FROM EMPLOYEE 
+ WHERE MANAGER IS NOT NULL       
+ GROUP BY JOB
+ HAVING NOT MIN(SALARY) < 2000
+ ORDER BY MIN(SALARY) DESC;
+ 
+--7.각 부서에 대해 부서번호, 사원수, 부서내의 모든 사원의 평균급여.
+--칼럼별칭-DNO, NUMBER OF PEOPLE, SALARY(평균급여/ 소수점 2번째에서 반올림)
+ SELECT DNO, COUNT(*) AS "NUMBER OF PEOPLE", ROUND(AVG(SALARY), 2) AS SALARY
+   FROM EMPLOYEE 
+ GROUP BY DNO
+ ORDER BY DNO ASC;
+
+--8.각 부서에 대해 부서번호, 이름, 지역명, 사원수, 모든 사원의 평균 급여
+--칼럼별칭-DNAME,LOCATION,NUMBER OF PEOPLE, SALARY(정수로 반올림)
+--DNAME, LOCATION: DECODE로 번호와 이름 매칭
+ SELECT DECODE(DNO, 10, 'ACCOUNTING', 20, 'RESEARCH', 30, 'SALES', 40, 'OPERATIONS') AS DNAME,
+        DECODE(DNO, 10, 'NEW YORK', 20, 'DALLAS', 30, 'CHICAGO', 40, 'BOSTON') AS LOCATION,
+        COUNT(*) AS "NUMBER OF PEOPLE", 
+        ROUND(AVG(SALARY)) AS SALARY
+   FROM EMPLOYEE
+ GROUP BY DNO; 
+
+--9.업무 표시 후 해당업무에 대해 부서번호별 급여 및 부서 10,20,30의 급여 총액을 각각 출력
+--칼럼별칭-JOB, 부서10, 부서20, 부서30, 총액 (:DECODE로 번호와 합계 매칭)
+ SELECT JOB, DNO,
+        DECODE(DNO, 10, SUM(SALARY)) AS "부서10",
+        DECODE(DNO, 20, SUM(SALARY)) AS "부서20",
+        DECODE(DNO, 30, SUM(SALARY)) AS "부서30",
+        SUM(SALARY) AS "총액"
+   FROM EMPLOYEE
+ GROUP BY DNO, ROLLUP(JOB)
+ ORDER BY DNO;
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

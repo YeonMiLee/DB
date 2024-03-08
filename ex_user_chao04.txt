@@ -1,0 +1,184 @@
+--QUIZ_chap03_ex3
+--employee테이블
+--1.덧셈연산을 이용하여 모든 사원에 대하여 $300의 급여 인상을 계산
+--  사원의 이름, 급여, 인상된 급여(salary_plus) 출력
+SELECT ename, salary,(salary + 300) AS salary_plus
+FROM employee;
+
+--2.사원의 이름, 급여, 연간 총수입(total_salary)을 급여가 많은 것부터 작은순으로 출력
+--  연간 총수입은 월급에 *12를 한 후 $100의 상여금을 더해서 계산
+SELECT ename, salary, ((salary * 12) + 100) AS total_salary
+FROM employee
+ORDER BY salary DESC;
+
+--3.급여가 2000이 넘는 사원의 이름과 급여를 급여가 많은 것부터 작은 순으로 출력
+SELECT ename, salary
+FROM employee
+WHERE salary > 2000
+ORDER BY salary DESC;
+
+--4.사원 번호가 7788인 사원의 이름과 부서번호 출력
+SELECT ename, dno
+FROM employee
+WHERE eno = 7788;
+
+--5.급여가 2000에서 3000사이에 포함되지 않는 사원의 이름과 급여 출력
+SELECT ename, salary
+FROM employee
+WHERE NOT salary BETWEEN 2000 AND 3000;
+--WHERE salary NOT BETWEEN 2000 AND 3000;
+
+--6.81/01/20부터 81/05/01사이에 입사한 사원의 이름, 담당업무, 입사일 출력
+SELECT ename, job, hiredate
+FROM employee
+WHERE hiredate BETWEEN '81/01/20' AND '81/05/01';
+
+--7.부서번호가 20 및 30에 속하는 사원의 이름과 부서번호 출력
+--  이름 - 내림차순으로 영문자순으로 출력
+SELECT ename, dno
+FROM employee
+WHERE dno = ANY (20, 30)
+--WHERE dno IN (20, 30)
+ORDER BY ename DESC;
+
+--8.사원 급여가 2000에서 3000사이에 포함되고 부서번호가 20 또는 30인 사원의 이름, 급여, 부서번호 출력
+--  이름 - 오름차순
+SELECT ename, salary, dno
+FROM employee
+WHERE salary BETWEEN 2000 AND 3000 AND dno IN (20, 30)   --dno=ANY(20,30)
+ORDER BY ename;  --ASC
+
+--9.81년도 입사한 사원의 이름과 입사일 출력
+--  (LIKE 연산자 + 와일드카드(%) 사용)
+SELECT ename, hiredate
+FROM employee
+WHERE hiredate LIKE '81/%';
+
+--10.관리자가 없는 사원의 이름과 담당업무 출력
+SELECT ename, job
+FROM employee
+WHERE manager IS NULL;
+
+--11.커미션을 받을 수 있는 자격이 되는 사원의 이름, 급여, 커미션 출력
+--  급여/커미션 기준으로 내림차순 정렬
+SELECT ename, salary, commission
+FROM employee
+WHERE commission IS NOT NULL
+ORDER BY salary DESC, commission DESC; 
+--첫번째로 정렬하고 그 다음 정렬이 됨
+
+--12.이름의 세번째 문자가 R인 사원 출력
+SELECT ename
+FROM employee
+WHERE ename LIKE '__R%';
+
+--13.이름에 A/E를 모두 포함하는 사원의 이름 출력
+SELECT ename
+FROM employee
+WHERE ename LIKE '%A%' AND ename LIKE '%E%';
+
+--14.담당업무가 사무원(CLERK) 또는 영업사원(SALESMAN) + 급여가 %1600, $950, $1300이 아닌
+--  사원의 이름, 담당업무, 급여 출력
+SELECT ename, job, salary
+FROM employee
+WHERE job IN('CLERK', 'SALESMAN') AND salary NOT IN(1600,950,1300) ;
+
+--15.커미션이 $500이상인 사원의 이름과 급여 및 커미션 출력
+SELECT ename, salary, commission
+FROM employee
+WHERE commission >= 500;
+
+
+
+
+--QUIZ_chap03_ex4
+--1.20번부서에 소속된 사원의 사번, 이름, 부서번호 출력하는 뷰(v_em_don)로 정의
+CREATE OR REPLACE VIEW v_em_don AS
+SELECT ENO, ENAME, DNO
+FROM EMPLOYEE
+WHERE DNO = 20;
+
+--2.이미 생성된 뷰(v_em_don)에 대해서 급여와 담당업무 출력
+CREATE OR REPLACE VIEW v_em_don AS
+SELECT ENO, ENAME, DNO, SALARY, JOB
+FROM EMPLOYEE
+WHERE DNO = 20;
+
+SELECT *
+FROM v_em_don;
+
+--3.이미 생성된 뷰(v_em_don)를 통해서 접근가능한 데이터만 입력이 가능하도록 제약
+CREATE OR REPLACE VIEW v_em_don AS
+SELECT ENO, ENAME, DNO, SALARY, JOB
+FROM EMPLOYEE
+WHERE DNO = 20
+WITH CHECK OPTION;
+
+--4.출력물에 제시된 데이터를 뷰(v_em_don)를 통해 입력하고 조회
+DELETE FROM EMPLOYEE
+WHERE ENAME IN ('Belita','Erica','Kali','Mia','Zinna');
+--확인작업(데이터양이 많을땐 확인하고 사용하는걸 추천)
+
+INSERT INTO v_em_don (ENO, ENAME, DNO, SALARY, JOB) 
+    VALUES (5100,'Belita',10,1500,'CLERK') ;
+INSERT INTO v_em_don (ENO, ENAME, DNO, SALARY, JOB) 
+    VALUES (5200,'Erica',20,2300,'ANALYST');
+INSERT INTO v_em_don (ENO, ENAME, DNO, SALARY, JOB) 
+    VALUES (5300,'Kali',30,1750,'SALESMAN') ;
+INSERT INTO v_em_don (ENO, ENAME, DNO, SALARY, JOB) 
+    VALUES (5400,'Mia',20,950,'ANALYST') ;
+INSERT INTO v_em_don (ENO, ENAME, DNO, SALARY, JOB) 
+    VALUES (5500,'Zinna',10,1050,'CLERK');
+
+COMMIT;
+
+SELECT *
+FROM v_em_don;
+
+--5.이미 생성된 뷰(v_em_don)에 대해서 읽기전용속성 부여
+--  (with check option/with read only는 동시부여 불가)
+CREATE OR REPLACE VIEW v_em_don AS
+SELECT ENO, ENAME, DNO, SALARY, JOB
+FROM EMPLOYEE
+WHERE DNO = 20
+WITH READ ONLY;
+
+--6.사번,이름,부서번호,부서이름 보여주는 뷰(emp_dept)생성
+CREATE OR REPLACE VIEW emp_dept AS
+SELECT A.ENO, A.ENAME, A.DNO, B.DNAME
+FROM EMPLOYEE A,
+     DEPARTMENT B
+WHERE A.DNO = B.DNO;
+
+SELECT *
+FROM emp_dept;
+
+--7.생성된 모든 뷰 조회
+SELECT *
+FROM v_em_don, emp_dept;
+
+--SELECT * FROM emp_dept;
+--SELECT * FROM v_em_don;
+
+--8.생성된 뷰(v_em_don/emp_dept) 제거
+DROP VIEW v_em_don;
+DROP VIEW emp_dept;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
