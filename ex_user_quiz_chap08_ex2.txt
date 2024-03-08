@@ -1,0 +1,102 @@
+--QUIZ_chap08_ex2
+--1.IF문 사용/ KING사원의 부서번호 얻어와 부서번호에 따른 부서명 출력
+ DECLARE 
+    vs_king_dno employee.dno%TYPE;
+ BEGIN
+  SELECT dno
+    INTO vs_king_dno
+    FROM EMPLOYEE
+   WHERE ENAME = 'KING';   
+    DBMS_OUTPUT.PUT_LINE(vs_king_dno);
+ END;
+ 
+ --teacher
+ DECLARE
+    vdno employee.dno%TYPE;
+    vdname VARCHAR2(14);
+ BEGIN
+    SELECT employee.dno
+      INTO vdno, vdname
+      FROM employee
+    WHERE ename = 'KING';
+    
+    IF(vdno=10) THEN vdname :='ACCOUNTING';
+    ELSIF(vdno=20) THEN vdname :='RESEARCH';
+    ELSIF(vdno=30) THEN vdname :='SALES';
+    ELSIF(vdno=40) THEN vdname :='OPERATIONS';
+    END IF;
+    
+    DBMS_OUTPUT.PUT_LINE(vdno|| '/'||vdname);
+ END;
+    
+    
+ --%ROWTYPE
+-->변수명 테이블명%ROWTYPE;
+-->변수명에  테이블에 들어있는 컬럼들을 담고 SELECT 시 INTO절에 테이블명.변수명으로 값을 넣어준 뒤 사용
+-->변수하나만 생성해도 원하는 테이블 전체의 컬럼 선택가능
+-->이후테이블을 변경시 자동갱신    
+ DECLARE
+    vemp employee.dno%ROWTYPE;
+    vdname VARCHAR2(14);
+ BEGIN
+    SELECT employee.dno
+      INTO vemp, vdname
+      FROM employee
+    WHERE ename = 'KING';
+    
+    IF(vdno=10) THEN vdname :='ACCOUNTING';
+    ELSIF(vdno=20) THEN vdname :='RESEARCH';
+    ELSIF(vdno=30) THEN vdname :='SALES';
+    ELSIF(vdno=40) THEN vdname :='OPERATIONS';   
+    END IF;
+    
+
+--2.BASIC LOOP문 사용/ 1~10사이 자연수의 합
+ DECLARE
+	vs_i NUMBER := 0;
+	vs_SUM NUMBER := 0;
+ BEGIN
+	LOOP
+        vs_i := vs_i + 1;	
+        vs_SUM := vs_SUM + vs_i;
+        EXIT WHEN vs_i = 10;	         
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('SUM: ' || vs_SUM);
+ END;
+
+--3.FOR LOOP문 사용/ 1~10사이 자연수의 합
+ DECLARE
+   vs_SUM NUMBER := 0;
+ BEGIN   
+   FOR i IN 1..10 
+   LOOP      
+    vs_SUM := vs_SUM + i;          
+   END LOOP;    
+   DBMS_OUTPUT.PUT_LINE ('SUM: ' || vs_SUM);  
+ END; 
+
+--4.WHILE LOOP문 사용/ 1~10사이 자연수의 합
+ DECLARE
+	vs_i NUMBER := 0;
+	vs_SUM NUMBER := 0;
+ BEGIN
+    WHILE vs_i <= 10	
+	LOOP
+        vs_i := vs_i + 1;	
+        vs_SUM := vs_SUM + vs_i;         
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('SUM: ' || vs_SUM);
+ END;
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,87 @@
+--트리거: 프로시저의 형태이지만 단독으로 사용되기보다 DML 구문에 붙여서 사용
+--AFTER 트리거 : DML등의 작업이 일어났을 때 작동하는 트리거, 해당 작업 후에 작동(테이블에만 작동)
+--BEFORE 트리거 : DML등의 작업이 일어났을 때 작동하는 트리거, 해당 작업직전에 작동
+ CREATE TABLE DEPT_ORIGIN AS
+ SELECT *
+   FROM DEPARTMENT 
+  WHERE 0=1;
+  
+ DROP TABLE DEPT_COPY;
+ COMMIT;
+ 
+ CREATE TABLE DEPT_COPY AS
+ SELECT *
+   FROM DEPARTMENT
+  WHERE 0=1;
+  
+--INSERT에 적용할 트리거를 생성
+ CREATE OR REPLACE TRIGGER trigger_sample1
+    AFTER INSERT
+    ON DEPT_ORIGIN
+    FOR EACH ROW
+ BEGIN 
+    IF INSERTING THEN
+       DBMS_OUTPUT.PUT_LINE('Insert Trigger 발생');
+       INSERT INTO DEPT_COPY
+       VALUES(:NEW.DNO, :NEW.DNAME, :NEW.LOC);
+    END IF;
+ END;
+ 
+ INSERT INTO DEPT_ORIGIN
+ VALUES (10, 'ACCOUNTING', 'NEW YORK');
+  
+--UPDATE와 DELETE 트리거     
+--백업테이블에 컬럼 추가
+ ALTER TABLE DEPT_COPY
+ ADD MODTYPE NCHAR(2);
+ 
+--트리거 만듬
+ CREATE OR REPLACE TRIGGER trigger_sample2
+    AFTER UPDATE OR DELETE
+    ON DEPT_ORIGIN
+    FOR EACH ROW
+ DECLARE
+    v_modtype NCHAR(2);
+ BEGIN
+    IF updating THEN
+       DBMS_OUTPUT.PUT_LINE('Updating Trigger 발생');
+       v_modtype := '수정';
+    ELSIF deleting THEN
+       DBMS_OUTPUT.PUT_LINE('Deleting Trigger 발생');
+       v_modtype := '삭제';
+    END IF;
+    
+ INSERT INTO DEPT_COPY
+ VALUES (:old.dno, :old.dname, :old.loc, v_modtype);
+ END;
+       
+--UPDATE를 통해 데이터 변경하고 copy테이블 확인       
+ UPDATE DEPT_ORIGIN 
+    SET DNO = 30,
+        DNAME = 'SALES',
+        LOC = 'CHICAGO'
+  WHERE DNO = 10;
+       
+ SELECT *
+   FROM DEPT_ORIGIN;
+ SELECT *
+   FROM DEPT_COPY;  
+   
+--DELETE를 통해 데이터를 삭제하고copy 테이블 확인  
+ DELETE DEPT_ORIGIN
+  WHERE DNO = 30;
+       
+ SELECT *
+   FROM DEPT_ORIGIN;
+ SELECT *
+   FROM DEPT_COPY;        
+       
+       
+       
+       
+       
+       
+       
+       
+       
+       
