@@ -1,0 +1,417 @@
+-- SELECT
+SELECT employee_id,emp_name
+FROM   employees
+WHERE salary > 5000
+    AND job_id = 'IT_PROG'   -- WHERE문에 조건 추가할때 쓰임 (AND, OR)
+ORDER BY employee_id DESC;   --EMPLOYEE_ID로 오름차순. DESC 붙으면 내림차순
+
+SELECT employee_id,emp_name
+FROM   employees
+WHERE salary > 5000
+    OR job_id = 'IT_PROG' 
+    
+ORDER BY employee_id DESC;
+
+SELECT A.employee_id,A.emp_name,A.DEPARTMENT_ID,
+B.DEPARTMENT_NAME AS DEP_NAME       --컬럼 별칭 설정 (AS 생략가능)
+
+FROM   employees A,                -- 테이블 별칭 설정 
+DEPARTMENTS B
+WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID;    --A와 B에서 DEPARTMENT_ID가 같은 항목만 출력
+
+--☆ SELECT문의 경우 프로그램 종료시 사라지는 데이터, SELECT을 저장하고 싶으면 VIEW를 만들어서 가상테이블로 저장해 둘 수 있다. 
+CREATE OR REPLACE VIEW EMP_DEPT_V3 AS
+SELECT A.employee_id,A.emp_name,A.DEPARTMENT_ID,
+B.DEPARTMENT_NAME AS DEP_NAME
+FROM   employees A,
+DEPARTMENTS B
+WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+--WITH CHECK OPTION;
+WITH READ ONLY;    -- 뷰는 덮어쓰기 됨!
+
+INSERT INTO EMP_DEPT_V3 VALUES (2,'AA',2,'ASD'); --가상의 뷰에서는 수정작업을 할 수 없음
+
+DROP VIEW EMP_DEPT_V3;
+
+
+
+--INSERT
+CREATE TABLE EX3_1 (
+COL1 VARCHAR2(10),
+COL2 NUMBER,
+COL3 DATE
+);
+
+INSERT INTO EX3_1 (COL1,COL2,COL3)
+VALUES ('ABC',10,SYSDATE);
+
+INSERT INTO EX3_1(COL3,COL1,COL2)
+VALUES (SYSDATE, 'DEF',20);
+
+INSERT INTO EX3_1(COL1,COL2,COL3)
+VALUES ('ABC', 10,30);   --타입오류 발생
+
+INSERT INTO EX3_1
+VALUES ('GHI',10,SYSDATE);
+
+INSERT INTO EX3_1 (COL1,COL2)
+VALUES ('ABC',10);
+
+INSERT INTO EX3_1
+VALUES ('GHI',10);  --값 오류 발생
+
+SELECT *
+FROM EX3_1;
+
+--INSERT ~ SELECT 
+CREATE TABLE EX3_2 (
+EMP_ID NUMBER,
+EMP_NAME VARCHAR2(100)
+);
+
+INSERT INTO EX3_2 ( EMP_ID, EMP_NAME)
+SELECT EMPLOYEE_ID, EMP_NAME
+FROM EMPLOYEES
+WHERE SALARY > 5000;
+
+--INSERT ~ SELECT이 아니어도 성공하는 경우 
+-- 10은 문자 10으로 인식, '10'은 숫자로 인식, '2024~'는 날짜로 인식 묵시적형변환일어남. col2입력값이 'LOW'였다면 오류남
+INSERT INTO EX3_1 (COL1,COL2,COL3)
+VALUES (10, '10', '2024-01-01');
+
+
+
+--ALTER TABLE 복습
+CREATE TABLE EX3_2_1 (
+EMP_ID NUMBER,
+EMP_NAME VARCHAR2(100)
+);
+-- 명시적 데이터 타입 변경  NUMBER -> VARCHAR2
+ALTER TABLE EX3_2_1 MODIFY EMP_ID VARCHAR2(10);
+
+--UPDATE
+SELECT *
+FROM EX3_1;
+
+UPDATE EX3_1
+SET COL2 = 50;  -- COL2를 모두 50으로 세팅 
+
+UPDATE EX3_1
+SET COL3 = SYSDATE
+WHERE COL3 IS NULL;  -- COL3 IS NULL일때 SYSDATE로 업데이트
+
+UPDATE EX3_1
+SET COL3 = SYSDATE
+WHERE COL3 =''; --COL3이 블랭크일 때 SYSDATE로 업데이트 (오라클은 항상 NULL로 채워지기 때문에 IS NULL, IS NOT NULL 사용해야함)
+
+
+--MERGE
+CREATE TABLE ex3_3 (
+    employee_id NUMBER,
+    bounus_amt  NUMBER DEFAULT 0
+);
+-- 예시 퀴즈 
+-- 신규 테이블 생성 후  SALES 테이블에서 200010부터 200012까지 매출을 달성한 사원번호를 입력함. 
+-- ① 관리자 사번이 146인 사원을 찾아 ②3_3 테이블에 있는 사원의 사번과 일치하면 보너스 금액에 급여의 1%를 보너스로 갱신하고 
+-- ③3_3테이블에 있는 사원의 사번과 일치하지 않으면 ①의 결과의 사원을 신규로 입력 (보너스는 0.1%로 설정), 이때 급여가 8000미만인 사원만 처리한다. 
+
+INSERT INTO ex3_3 ( employee_id )
+    SELECT
+        e.employee_id
+    FROM
+        employees e,sales s
+    WHERE
+            e.employee_id = s.employee_id
+        AND s.sales_month BETWEEN '200010' AND '200012'
+    GROUP BY            -- GROUP BY 는 사원번호 중복 제거 절
+        e.employee_id;  
+
+SELECT *
+FROM EX3_3
+ORDER BY EMPLOYEE_ID;
+
+--3_3 테이블에 있는 사원의 사번, 관리자 사번, 급여, 급여 0.01을 사원테이블에서 조회 함
+SELECT EMPLOYEE_ID, MANAGER_ID, SALARY, SALARY * 0.01
+FROM EMPLOYEES
+WHERE EMPLOYEE_ID IN (SELECT EMPLOYEE_ID FROM EX3_3);
+
+-- 관리자 사번이 146인 사람 중 3_3 테이블에 없는 사원의 사번, 관리자 사번, 급여, 급여 0.001을 조회 한 것. 
+SELECT EMPLOYEE_ID, MANAGER_ID, SALARY, SALARY * 0.001
+FROM EMPLOYEES
+WHERE EMPLOYEE_ID NOT IN (SELECT EMPLOYEE_ID FROM EX3_3)
+AND MANAGER_ID = 146;
+
+------까지 MERGE 문을 작성하기 위한 준비 -------
+MERGE INTO ex3_3 d      --MERGE쓸 테이블 이름
+USING ( SELECT employee_id,salary,manager_id    -- UPDATE나 INSERT될 데이터 원천
+    FROM employees
+    WHERE manager_id = 146) b 
+    ON( d.employee_id = b.employee_id )        -- UPDATE 될 조건
+WHEN MATCHED THEN      --위의 조건이 맞으면 실행
+    UPDATE SET d.bounus_amt = d.bounus_amt + b.salary * 0.01   -- 컬럼 1= 값1, 컬럼 2= 값2...
+    DELETE WHERE (B.EMPLOYEE_ID = 161)
+WHEN NOT MATCHED THEN  --위의 조건이 아니라면 실행
+    INSERT (d.EMPLOYEE_ID, d.BOUNUS_AMT) VALUES ( b.employee_id,b.salary * 0.001 )
+    WHERE ( b.salary < 8000 );
+    
+SELECT *
+FROM EX3_3
+ORDER BY EMPLOYEE_ID;
+    
+    
+
+--DELETE ::데이터 삭제
+DELETE EX3_3;
+
+--DELETE ::파티션 삭제
+SELECT PARTITION_NAME
+FROM USER_TAB_PARTITIONS 
+WHERE TABLE_NAME = 'SALES'; -- 파티션 이름 조회 
+    
+DELETE SALES PARTITION(SALES_Q3_2000); -- 파티션 내용 삭제
+
+
+--COMMIT ROLLBACK TRUNCATE
+CREATE TABLE EX3_4 (
+EMPLOYEE_ID NUMBER);
+
+
+INSERT INTO EX3_4 VALUES(100);
+COMMIT;
+
+SELECT *
+FROM EX3_4;
+
+TRUNCATE TABLE EX3_4;
+
+
+--의사컬럼
+SELECT ROWNUM, EMPLOYEE_ID
+FROM EMPLOYEES;
+
+SELECT ROWNUM, EMPLOYEE_ID
+FROM EMPLOYEES
+WHERE ROWNUM <5;  --의사컬럼 조건넣어서 소환 5보다 적은 수 까지만
+
+SELECT ROWNUM, EMPLOYEE_ID, ROWID --ROWID은 각 로우가 저장된 주소값을 가리키는 의사컬럼
+FROM EMPLOYEES
+WHERE ROWNUM <5;
+
+
+-- QUIZ 1
+-- 사원테이블에서 관리자 사번이 124번이고 급여가 2000에서 3000사이에 있는 사원의 사번, 사원명, 급여, 관리자 사번을 입력하는 INSERT문 작성
+CREATE TABLE EX3_6 (
+IMPLOYEE_ID NUMBER(6),
+EMP_NAME VARCHAR2(80),
+SALARY NUMBER(8,2),
+MANAGER_ID NUMBER(6)
+);  --가져오려는 테이블의 컬럼 타입 확인하고 만들기
+
+INSERT INTO EX3_6  --입력받을 테이블
+SELECT EMPLOYEE_ID, EMP_NAME, SALARY, MANAGER_ID  --입력 받을 컬럼
+FROM EMPLOYEES A      --자료 꺼내올 테이블 (별명)
+WHERE A.MANAGER_ID = 124      -- 조건 1
+ AND A.SALARY BETWEEN 2000 AND 3000;    -- AND 조건 2 샐러리 2000과 3000사이
+
+DELETE EX3_6;
+DROP TABLE EX3_6;
+
+
+
+--연산자 
+--문자연산자 || :: 두 문자를 붙이는 (연결하는) 연산자 
+SELECT EMPLOYEE_ID || '-' || EMP_NAME AS EMPOYEE_INFO
+FROM EMPLOYEES
+WHERE ROWNUM < 5;
+
+--표현식 (CASE는 뒤에 END 붙어야함)
+SELECT employee_id, salary,
+    CASE WHEN salary <= 5000 THEN  'C등급'  -- THEN이하의 출력값의 데이터 타입은 일치 시킬 것. 
+         WHEN salary > 5000  AND salary <= 15000 THEN 'B등급'
+         ELSE 'A등급'
+    END AS salary_grade   --END AS (NAME) 은 위의 조건을 만족해서 출력하는 걸 (NAME)으로 지정
+FROM employees;
+
+--조건식
+-- 비교조건식 :: ANY (OR) 조건 중 하나만 만족해도 추출, 비교연산자도 사용가능
+SELECT employee_id,salary
+FROM employees
+WHERE salary = ANY ( 2000,3000,4000 )
+ORDER BY employee_id;
+
+SELECT employee_id,salary
+FROM employees
+WHERE salary = 2000
+ OR salary = 3000
+ OR salary = 4000
+ORDER BY EMPLOYEE_ID;   -- OR 조건과 ANY는 같은 결과 값을 도출함.
+
+
+--비교 조건식 :: ALL(AND) 모든 조건 만족해야 추출
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY = ALL(2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+ 
+--비교 조건식 :: SOME , ANY와 동일하게 작동
+SELECT employee_id,salary
+FROM employees
+WHERE salary = SOME ( 2000,3000,4000 )
+ORDER BY employee_id;
+
+--논리조건식 :: AND, OR, NOT
+SELECT EMPLOYEE_ID, SALARY
+FROM EMPLOYEES
+WHERE NOT (SALARY >= 2500)
+ORDER BY EMPLOYEE_ID;
+
+
+--NULL조건식 :: 특정값이 NULL인지 여부를 체크하는 조건식 (IS NULL, IS NOT NULL)
+--BETWEEN AND 조건식 (<=, >=논리연산자로 사용가능)
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY BETWEEN 2000 AND 2500
+ORDER BY EMPLOYEE_ID;
+
+--IN조건식 (OR 조건으로 변환 가능, =ANY형태로도 사용가능.)
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY IN (2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY NOT IN (2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+--EXISTS 조건식 :: 서브쿼리가 있어야하고 , 서브쿼리 조인조건 (A.어쩌구 = B.어쩌구)이 있어야함.
+SELECT department_id,department_name
+ FROM departments a
+WHERE EXISTS ( SELECT  *
+                 FROM employees b
+                WHERE a.department_id = b.department_id
+                AND b.salary > 3000 )
+ORDER BY a.department_name;
+
+--LIKE 조건식 :: 문자열의 패턴 검색 할 때 사용하는 조건 
+SELECT EMP_NAME
+ FROM EMPLOYEES
+WHERE EMP_NAME LIKE 'A%'
+ORDER BY EMP_NAME;
+
+SELECT EMP_NAME
+ FROM EMPLOYEES
+WHERE EMP_NAME LIKE 'Al%'
+ORDER BY EMP_NAME;   --조건식을 검색 할 땐 대소문자구분함. 
+
+SELECT EMP_NAME
+ FROM EMPLOYEES
+WHERE EMP_NAME LIKE '%S%'
+ORDER BY EMP_NAME;
+
+CREATE TABLE EX3_5 (
+NAMES VARCHAR2(30));
+
+INSERT INTO EX3_5 VALUES ('홍길동');
+INSERT INTO EX3_5 VALUES ('홍길용');
+INSERT INTO EX3_5 VALUES ('홍길상');
+INSERT INTO EX3_5 VALUES ('홍길상동');
+
+SELECT *
+FROM EX3_5
+WHERE NAMES LIKE '홍길%';  -- %사용하면 앞에 조건 맞으면다 추출
+
+SELECT *
+FROM EX3_5
+WHERE NAMES LIKE '홍길_';  -- _사용하면 조건 + _만큼 추출
+
+--QUIZ 2
+--관리자 사번이 145번인 사원을 찾아 위 테이블에 있는 사원의 사번과 일치하면 보너스 금액에 자신의 급여를 1%보너스로 갱신하고, 
+-- 3_3 테이블에 있는 사원의 사번과 일치하지 않는 사원을 신규입력. (이때 보너스는 급여의 0.5%) 로 하는 MERGE문 작성
+
+DELETE EX3_3;
+
+INSERT INTO EX3_3 (EMPLOYEE_ID)
+SELECT E.EMPLOYEE_ID
+FROM EMPLOYEES E, SALES S
+WHERE E.EMPLOYEE_ID = S.EMPLOYEE_ID
+ AND S.SALES_MONTH BETWEEN '200010' AND '200012'
+ GROUP BY E.EMPLOYEE_ID;
+ 
+ COMMIT;
+ 
+ SELECT *
+ FROM EX3_3
+ ORDER BY EMPLOYEE_ID;
+
+
+--MERGE문 작성
+MERGE INTO EX3_3 D
+USING (SELECT EMPLOYEE_ID, SALARY, MANAGER_ID
+        FROM EMPLOYEES
+        WHERE MANAGER_ID = 145) B
+        ON (D.EMPLOYEE_ID = B.EMPLOYEE_ID)
+WHEN MATCHED THEN
+    UPDATE SET D.BOUNUS_AMT = D.BOUNUS_AMT + B.SALARY *0.01
+WHEN NOT MATCHED THEN
+    INSERT (D.EMPLOYEE_ID, D.BOUNUS_AMT) VALUES (B.EMPLOYEE_ID, B.SALARY * 0.005);
+
+SELECT *
+FROM EX3_3
+ORDER BY EMPLOYEE_ID;
+    
+--QUIZ 3
+--사원테이블(EMPLOYEES) 에서 커미션 값(COMMISSION_PCT)이 없는 사원의 사번과 사원명(EMPLOYEE_ID, EMP_NAME)을 추출하는 쿼리 작성
+SELECT EMPLOYEE_ID, EMP_NAME
+ FROM EMPLOYEES 
+WHERE COMMISSION_PCT IS NULL
+ORDER BY EMPLOYEE_ID;
+
+--QUIZ 4
+--아래 쿼리를 논리 연산자로 변환하시오 
+--문제
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY BETWEEN 2000 AND 2500
+ORDER BY EMPLOYEE_ID;
+
+--결과
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY >= 2000
+    AND SALARY <= 2500
+ORDER BY EMPLOYEE_ID;
+
+
+--QUIZ 5
+--다음 두 쿼리를 ANY, ALL을 사용해서 동일 한 결과를 추출하도록 변경하자
+--문제
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY IN (2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+--변환결과
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY = ANY (2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+--문제
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY NOT IN (2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+--변환 결과 
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY != ALL(2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
+--다른 결과 값
+SELECT EMPLOYEE_ID, SALARY
+ FROM EMPLOYEES
+WHERE SALARY <> ALL(2000,3000,4000)
+ORDER BY EMPLOYEE_ID;
+
