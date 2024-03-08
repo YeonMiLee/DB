@@ -1,0 +1,374 @@
+--<서브쿼리>
+--연관성 없는 서브쿼리: 메인쿼리와 연관성이 없는 서브쿼리->메인 테이블과 조인 조건이 걸리지않음
+ SELECT COUNT(*)
+   FROM EMPLOYEES
+ WHERE SALARY >= (SELECT AVG(SALARY) 
+                    FROM EMPLOYEES);
+ 
+ SELECT COUNT(*)
+   FROM EMPLOYEES
+ WHERE DEPARTMENT_ID IN (SELECT DEPARTMENT_ID 
+                           FROM DEPARTMENTS
+                          WHERE PARENT_ID IS NULL );
+                          
+ SELECT EMPLOYEE_ID, EMP_NAME, JOB_ID
+   FROM EMPLOYEES
+ WHERE (EMPLOYEE_ID, JOB_ID) IN (SELECT EMPLOYEE_ID, JOB_ID
+                                   FROM JOB_HISTORY );
+                                   
+ UPDATE EMPLOYEES
+    SET SALARY = (SELECT AVG(SALARY) FROM EMPLOYEES);
+    
+ DELETE EMPLOYEES
+  WHERE SALARY >= (SELECT AVG(SALARY) FROM EMPLOYEES);
+  
+ ROLLBACK;
+ 
+ SELECT SALARY
+   FROM EMPLOYEES;
+   
+
+--연관성 있는 서브쿼리: 메인 테이블과 조인조건이 걸린 서브쿼리
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A 
+ WHERE EXISTS (SELECT 1
+                 FROM JOB_HISTORY B
+                WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID );
+                
+ SELECT A.EMPLOYEE_ID,
+        (SELECT B.EMP_NAME
+           FROM EMPLOYEES B
+          WHERE A.EMPLOYEE_ID = B.EMPLOYEE_ID) AS EMP_NAME, A.DEPARTMENT_ID,
+        (SELECT B.DEPARTMENT_NAME
+           FROM DEPARTMENTS B
+          WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID) AS DEP_NAME
+   FROM JOB_HISTORY A;
+   
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A
+ WHERE EXISTS (SELECT 1
+                 FROM EMPLOYEES B
+                WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+                    AND B.SALARY > (SELECT AVG(SALARY)
+                                      FROM EMPLOYEES ) );
+                                      
+ SELECT DEPARTMENT_ID, AVG(SALARY)
+   FROM EMPLOYEES A
+ WHERE DEPARTMENT_ID IN (SELECT DEPARTMENT_ID
+                           FROM DEPARTMENTS
+                          WHERE PARENT_ID = 90 )
+ GROUP BY DEPARTMENT_ID;
+ 
+ UPDATE EMPLOYEES A
+    SET A.SALARY = (SELECT SAL
+                      FROM (SELECT B.DEPARTMENT_ID, AVG(C.SALARY) AS SAL
+                              FROM DEPARTMENTS B, EMPLOYEES C
+                             WHERE B.PARENT_ID = 90
+                                AND B.DEPARTMENT_ID = C.DEPARTMENT_ID
+                             GROUP BY B.DEPARTMENT_ID ) D
+                    WHERE A.DEPARTMENT_ID = D.DEPARTMENT_ID )
+ WHERE A.DEPARTMENT_ID IN (SELECT DEPARTMENT_ID
+                             FROM DEPARTMENTS
+                            WHERE PARENT_ID = 90);
+ 
+ SELECT DEPARTMENT_ID, MIN(SALARY), MAX(SALARY)
+   FROM EMPLOYEES A
+ WHERE DEPARTMENT_ID IN (SELECT DEPARTMENT_ID
+                           FROM DEPARTMENTS
+                          WHERE PARENT_ID = 90)
+ GROUP BY DEPARTMENT_ID;     
+ 
+ MERGE INTO employees a
+  USING ( SELECT b.department_id, AVG(c.salary) as sal
+            FROM departments b, 
+                  employees c
+           WHERE b.parent_id = 90 
+             AND b.department_id = c.department_id
+            GROUP BY b.department_id ) d
+      ON ( a.department_id = d.department_id )
+ WHEN MATCHED THEN
+ UPDATE SET a.salary = d.sal;
+  
+ ROLLBACK;
+ 
+ --인라인뷰: FROM절에 사용하는 서브쿼리
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+  FROM EMPLOYEES A,
+       DEPARTMENTS B,
+       ( SELECT AVG(C.SALARY) AS AVG_SALARY 
+           FROM DEPARTMENTS B,
+                EMPLOYEES C
+          WHERE B.PARENT_ID = 90  -- 기획부
+            AND B.DEPARTMENT_ID = C.DEPARTMENT_ID ) D
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID 
+   AND A.SALARY > D.AVG_SALARY;
+
+--2000년도 이탈리아 매출액
+ SELECT A.* 
+  FROM ( SELECT A.SALES_MONTH, ROUND(AVG(A.AMOUNT_SOLD)) AS MONTH_AVG
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.SALES_MONTH BETWEEN '200001' AND '200012'
+            AND A.CUST_ID = B.CUST_ID
+            
+            AND b.COUNTRY_ID = c.COUNTRY_ID
+            AND C.COUNTRY_NAME = 'ITALY'     
+          GROUP BY A.SALES_MONTH  
+       )  A,        --월간매출액
+       ( SELECT ROUND(AVG(A.AMOUNT_SOLD)) AS YEAR_AVG
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.SALES_MONTH BETWEEN '200001' AND '200012'
+            AND A.CUST_ID = B.CUST_ID
+            AND B.COUNTRY_ID = C.COUNTRY_ID
+            AND C.COUNTRY_NAME = 'ITALY'       
+       ) B          --연간매출액
+ WHERE A.MONTH_AVG > B.YEAR_AVG ;
+
+
+
+--복잡한 쿼리 작성할때
+--1)최종적으로 조회되는 결과항목을 정리
+--2)필요한 테이블과 컬럼 파악
+--3)작은 단위로 분할해서 쿼리작성
+--4)분할한 단위의 쿼리를 하나로 합쳐 최종결과 산출
+--5)결과 검증
+
+--EX>
+--1-1)출력항목: 연도|최대매출사원명|최대매출액
+--2-2)필요한 테이블:이탈리아찾기-COUNTRIES, 이태리고객-CUSTOMER, 매출-SALES, 사원정보-EMPLOYEES
+--3-3-1)연도 사원별 이태리 매출액
+--이태리 고객찾기: CUSTOMERS, COUNTRIES를 COUNTRY_ID로 조인, COUNTRY_NAME = 'ITALY' 찾기
+--이태리 매출찾기: 위 결과와 SALES 테이블을 CUST_ID로 조인
+--최대매출액 MAX함수, 연도별로 GROUP BY
+ SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+        A. EMPLOYEE_ID, SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+   FROM SALES A,
+        CUSTOMERS B,
+        COUNTRIES C
+  WHERE A.CUST_ID = B.CUST_ID
+      AND B.COUNTRY_ID = C.COUNTRY_ID
+      AND C.COUNTRY_NAME = 'Italy'  
+ GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID;
+ 
+ --연도별 최대매출액, 최소매출액 
+ SELECT YEARS, MAX(AMOUNT_SOLD) AS MAX_SOLD
+   FROM (SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+            A.EMPLOYEE_ID, SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.CUST_ID = B.CUST_ID
+              AND B.COUNTRY_ID = C.COUNTRY_ID
+              AND C.COUNTRY_NAME = 'Italy' 
+         GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID ) K
+ GROUP BY YEARS
+ ORDER BY YEARS;
+ 
+ --3)1,2의 결과를 조인해 최대 매출을 일으킨 사원 추출
+ SELECT EMP.YEARS, 
+       EMP.EMPLOYEE_ID,
+       EMP.AMOUNT_SOLD
+  FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                A.EMPLOYEE_ID, 
+                SUM(a.AMOUNT_SOLD) AS AMOUNT_SOLD
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.CUST_ID = B.CUST_ID
+            AND B.COUNTRY_ID = C.COUNTRY_ID
+            AND C.COUNTRY_NAME = 'Italy'     
+          GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID   
+        ) EMP,
+       ( SELECT  YEARS, 
+                 MAX(AMOUNT_SOLD) AS MAX_SOLD
+          FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                        A.EMPLOYEE_ID, 
+                        SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+                   FROM SALES A,
+                        CUSTOMERS B,
+                        COUNTRIES C
+                  WHERE A.CUST_ID = B.CUST_ID
+                    AND B.COUNTRY_ID = C.COUNTRY_ID
+                    AND C.COUNTRY_NAME = 'Italy'     
+                  GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID    
+               ) K
+          GROUP BY YEARS
+       ) SALE
+  WHERE EMP.YEARS = SALE.YEARS
+     AND EMP.AMOUNT_SOLD = SALE.MAX_SOLD 
+  ORDER BY YEARS;
+  
+ --3번의 결과와 사원테이블 조인해서 사원 이름 출력
+ SELECT EMP.YEARS, 
+       EMP.EMPLOYEE_ID,
+       EMP2.EMP_NAME,
+       EMP.AMOUNT_SOLD
+  FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                A.EMPLOYEE_ID, 
+                SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.CUST_ID = B.CUST_ID
+            AND B.COUNTRY_ID = C.COUNTRY_ID
+            AND C.COUNTRY_NAME = 'Italy'     
+          GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID   
+        ) EMP,
+       ( SELECT  YEARS, 
+                 MAX(AMOUNT_SOLD) AS MAX_SOLD
+          FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                        A.EMPLOYEE_ID, 
+                        SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+                   FROM SALES A,
+                        CUSTOMERS B,
+                        COUNTRIES C
+                  WHERE A.CUST_ID = B.CUST_ID
+                    AND B.COUNTRY_ID = C.COUNTRY_ID
+                    AND C.COUNTRY_NAME = 'Italy'     
+                  GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID    
+               ) K
+          GROUP BY YEARS
+       ) SALE,
+       EMPLOYEES EMP2
+  WHERE EMP.YEARS = SALE.YEARS
+    AND EMP.AMOUNT_SOLD = SALE.MAX_SOLD 
+    AND EMP.EMPLOYEE_ID = EMP2.EMPLOYEE_ID
+ORDER BY YEARS;
+
+
+
+
+--WITH절 (세미콜론없음)
+--연도별 최종일
+ SELECT MAX(PERIOD) MAX_MONTH
+   FROM KOR_LOAN_STATUS
+ GROUP BY SUBSTR(PERIOD, 1, 4);
+ 
+--월별, 지역별 대출잔액
+ SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT
+   FROM KOR_LOAN_STATUS
+ GROUP BY PERIOD, REGION;
+ 
+--연도별 최종월 대출잔액이 가장 큰 금액
+ SELECT B.PERIOD, MAX(B.JAN_AMT) MAX_JAN_AMT
+   FROM (SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT
+           FROM KOR_LOAN_STATUS
+         GROUP BY PERIOD, REGION
+         ) B,
+         (SELECT MAX(PERIOD) MAX_MONTH
+           FROM KOR_LOAN_STATUS
+         GROUP BY SUBSTR(PERIOD, 1, 4)
+         ) A
+ WHERE B.PERIOD = A.MAX_MONTH
+ GROUP BY B.PERIOD;
+ 
+--연도별 최종월 기준 가장 대출이 많은 도시와 잔액조회
+ SELECT B2.*
+   FROM (SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT               --중복구문
+           FROM KOR_LOAN_STATUS
+         GROUP BY PERIOD, REGION
+         ) B2,
+         (SELECT B.PERIOD, MAX(B.JAN_AMT) MAX_JAN_AMT
+           FROM (SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT       --중복구문
+                   FROM KOR_LOAN_STATUS
+                 GROUP BY PERIOD, REGION
+                 ) B,
+                 (SELECT MAX(PERIOD) MAX_MONTH
+                   FROM KOR_LOAN_STATUS
+                 GROUP BY SUBSTR(PERIOD, 1, 4)
+                 ) A
+                 WHERE B.PERIOD = A.MAX_MONTH
+                 GROUP BY B.PERIOD
+         ) C
+ WHERE B2.PERIOD = C.PERIOD
+    AND B2.JAN_AMT = C.MAX_JAN_AMT
+ ORDER BY 1;
+         
+--별첨지정
+ WITH B2 AS (SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT
+               FROM KOR_LOAN_STATUS
+             GROUP BY PERIOD, REGION
+             ),
+      C AS (SELECT B.PERIOD, MAX(B.JAN_AMT) MAX_JAN_AMT
+               FROM (SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) JAN_AMT    
+                       FROM KOR_LOAN_STATUS
+                     GROUP BY PERIOD, REGION
+                     ) B,
+                     (SELECT MAX(PERIOD) MAX_MONTH
+                       FROM KOR_LOAN_STATUS
+                     GROUP BY SUBSTR(PERIOD, 1, 4)
+                     ) A
+                     WHERE B.PERIOD = A.MAX_MONTH
+                     GROUP BY B.PERIOD
+             )
+
+--별첨사용
+ SELECT B2.*
+   FROM B2, C
+ WHERE B2.PERIOD = C.PERIOD
+    AND B2.JAN_AMT = C.MAX_JAN_AMT
+ ORDER BY 1;
+ 
+ 
+ --WITH절 연습문제>>
+ --2001년12월(SALES_MONTH='200112') 판매데이터 중 현재일자를 기준으로 고객의 나이(CUSTOMERS.CUST_YEAR_OF_BIRTH)를
+ --계산해서 연령대별 매출금액을 보여주는 쿼리작성
+ --SALES 테이블에 판매데이터, CUSTOMNERS 테이블에 고객정보
+  WITH basis AS ( SELECT CASE WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth < 20 THEN '10대'
+                              WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth BETWEEN 20 AND 29 THEN '20대'
+                              WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth BETWEEN 30 AND 39 THEN '30대'
+                              WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth BETWEEN 40 AND 49 THEN '40대'
+                              WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth BETWEEN 50 AND 59 THEN '50대'
+                              WHEN to_char(sysdate, 'yyyy') - b.cust_year_of_birth >= 60 THEN '60대 이상'
+                               END AS old_seg, s.amount_sold
+                    FROM sales s, 
+                         customers b
+                  WHERE s.sales_month = '200112'
+                     AND s.cust_id = b.CUST_ID
+                    ),
+     real_data AS ( SELECT old_seg,  SUM(amount_sold) as old_seg_amt
+                                  FROM basis
+                                 GROUP BY old_seg
+                    )
+              
+ SELECT *
+ FROM real_data
+ ORDER BY old_seg;  
+ 
+--WIDTH_BUCKET(EXPR, MIN_VALUES, MAX_VALUES, NUM_BUCKETS)
+--  : EXPR 값에 따라 최소값(MIN_VALUES), 최대값(MAX_VALUES)을 주어 NUM_BUCKETS 수 만큼 분할
+--WIDTH_BUCKET사용
+WITH basis AS ( SELECT WIDTH_BUCKET(to_char(sysdate, 'yyyy') - b.cust_year_of_birth, 10, 90, 8) AS old_seg,                
+                       s.amount_sold
+                  FROM sales s, 
+                       customers b
+                 WHERE s.sales_month = '200112'
+                   AND s.cust_id = b.CUST_ID
+               ),
+  real_data AS ( SELECT old_seg * 10 || '대' AS old_segment,
+                        SUM(amount_sold) as old_seg_amt
+                   FROM basis
+                GROUP BY old_seg
+              )
+
+ SELECT *
+ FROM real_data
+ ORDER BY old_segment;   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

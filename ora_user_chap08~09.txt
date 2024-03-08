@@ -1,0 +1,402 @@
+--chap08
+--익명블록
+ DECLARE
+  v1_num NUMBER;        --변수선언
+ BEGIN                  --실행부
+  v1_num := 100;
+  
+  DBMS_OUTPUT.PUT_LINE(v1_num);     --출력문/ 괄호안에 있는 매개변수 값을 출력하는 기능
+
+ END;
+ 
+ --ctrl+enter = 메세지만 출력(결과X)
+ --상단 보기 tap에서 dbms출력 선택-출력창에서 +버튼, 유저 선택, ctrl enter 누르면 출력
+ --쿼리를 블럭으로 잡아서 CTRL+ENTER/ 그냥 누르면 상단까지 같이 실행해서 오류가 나옴
+ 
+ --연산자
+ DECLARE
+    a INTEGER := 2**2*3**2;
+ BEGIN
+    DBMS_OUTPUT.PUT_LINE('a =' || TO_CHAR(a));
+ END;
+ 
+--DML문
+--PL/SQL블록 실행부에서 사용/ 테이블에 있는 데이터를 할당할때는 SELECT INTO 사용
+--테이블의 특정 컬럼타입을 변수타입으로 선언가능(변수명 테이블명.컬럼명%TYPE;)
+ DECLARE
+/*  vs_emp_name    VARCHAR2(80); -- 사원명 변수
+  vs_dep_name    VARCHAR2(80); -- 부서명 변수    */
+  vs_emp_name employees.emp_name%TYPE;
+  vs_dep_name departments.department_name%TYPE;
+ BEGIN
+  SELECT a.emp_name, b.department_name
+    INTO vs_emp_name, vs_dep_name
+    FROM employees a,
+         departments b
+   WHERE a.department_id = b.department_id
+     AND a.employee_id = 100;
+
+  DBMS_OUTPUT.PUT_LINE( vs_emp_name || ' - ' || vs_dep_name);
+ END;
+
+ 
+ 
+ --PRAGMA 키워드
+ --PRAGMA AUTONOMOUS_TRANSACTION: 현재 블록의 독립적 트랜잭션 처리 시 사용
+ --PRAGMA EXCEPTION_INIT(예외명, 예외번호): 사용자 정의 예외 처리시 사용, 특정 예외번호를 사용자 정의 예외로 사용하는 역할
+ --PRAGMA RESTRIC_REFERECES(서브 프로그램명, 옵션): 패키지에 속한 서브프로그램(주로 함수에 사용)에서 옵션 값에 따라 특정 동작 제한
+ --PRAGMA SERIALLY_RESUABLE: 패키지에 선언된 변수에 대해 한 번 호출된 후 메모리를 해제
+ 
+ 
+ --라벨
+ --PL/SQL프로그램 상에서 특정 부분에 이름 부여 = 라벨/ <<라벨명>>형태
+ --특정 조건에 따라 GO TO 문으로 특정 라벨로 이동 할 수 있음
+ --반복문에 라벨 붙이면 특정 조건에 따라 EXIT문으로 해당 반복문 블록을 빠져 나올 수 있음
+ 
+ 
+ CREATE TABLE ch07_varchar2 (
+      VAR1 VARCHAR2(5000));
+
+ CREATE TABLE ch07_varchar2 (
+      VAR1 VARCHAR2(4000));
+      
+ INSERT INTO ch07_varchar2 (VAR1)
+ VALUES ('tQbADHDjqtRCvosYCLwzbyKKrQCdJubDPTHnzqvjRwGxhQJtrVbXsLNlgeeMCemGMYpvfoHUHDxIPTDjleABGoowxlzCVipeVwsMFRNzZYgHfQUSIeO
+        ITaCKJpxAWwydApVUlQiKDgJlFIOGPOKoJsoemqNbOLdZOBcQhDcMLXuYjRQZDIpgpmImgiwzcLkSilCmLrSbmFNsKEEpzCHDylMvkYPKPNeuJxLvJiAp
+        NCYzrMcflECbxwNTKSxaEwVvCYnTnFfMFgDqxobWcSmMJrNTQIVOeWlPaMTfRHsrlFSukppmljmOojPSgJiSbQcgtWWOwUNNYFGtgCGBsIcTGAiHWBxtY
+        VXecoJgJCAJptIVmVTZSKliRLoPYTIUpksBuQaqFHLhCkosWChoMjbqgLtBIRBynsKjKiLrdeHVvZanNVElDjLWwlCDhbpsAVQMTzjzhoKIJBdthynMBMV
+        jeNmsKAjdAYhPZKmuKOuMloQdkqPjoKbfjDEeATciMrXiMQorMhYmBlMODBbyLLIkbmtZdPcWGSuxFEUwXnWpvnunEgcLelSneRIpgRNTzTkHqgLbpxoHz
+        CYgSWlIAvKljCnmWiPWGGwlUFOudRSdoqUxntyhNYEiVXtMObywEltTImawnElpmeiWwlTjGTFceqyjhNqiDLxwduubykWzDmFSJNvVvDZibrCpAReqQjl
+        QZcxuVqjKGKvoDuEcQPQeDzmdMYSOTIQdPDNfDffCOUWflHSQhvVTiYumBQIoyznWNITGZkefknJpGEutUnhBgLPQTWTBeTYccqlLrxvRjfJpdpfVDqqfK
+        CngemIEDDHNdvBxCqKDTrrJAumXMKgpWLIHctQuACeNaKnffpYXiioLxZDrxpuZPPUGpRsCtoQuBfogkKuusVATkMyajKTPSyTQbfhZepRjNdrhkymqKvsA
+        cThYbMSMnkKcLWFPAMeGysBVKkQtFMPvRBoDszlSZcMYzwxkKQwJnuVnDxShYiHFlzgDWqhZoqeypyFVBNDtHkiVzHkQisYLbsbVneJyHbHdtaIFLVbfTq
+        bkGQTEjFlPiGUddPUIoLWALrbKcLwBizwhJvaXkvOphcGWpdNAhxgehCvjcQFSFhxrBuANKjyWncWAUpKKJcfQCsQlLfpqdMhjWGkAMMWUaDfCrGtmtkiIZ
+        OdNapEnvfFKiHAhBhejgKSuyKXFQXyCaLwwvonHsceJKgjtnYVZvBCYYBSqNCqVqCGewootJJsqrCnmiteMZBbyMPnIrdcielnGUYmwiOPmEqKGvxDmDRTD
+        RumnSRcnvgxLbaiQIuzdslEIMquvvwmvgaumqPkduNyfRtXErCPvDYLelhjNNOjbGryRpTtDHxIJebMEtKryUyZRIdADeTEBExwHMRHzAYFizYiesaMhNIs
+        OUzUTmyEMuFQrsUEtjwhUWIvADNlrcxPZwRazPMMvdVZssmXbXuCkRoPYNGLPwUmrWrrIgQoMSGMPvTcbHnbtleyKYmOMgymANQBZDMoqAOzMHrAVunIiyk
+        CudFVNObNgXOoyfQRICbFsWygSZXufipvrWWmRnBWYdoKmIRewOObUjiNDdQsxQIXtlbPSSngfQPfeQKOolVASXIuAmeODKtSOPaEaFKcedGzzsbrPlsPnR
+        RuYFeVdhyufpjFVVrTPczSQkmPYXercLMmVEaDmJXKTqEVNSKeOshDCDJwdINFsLhAuKIIfOdjSEndDwumQLvePVjzNoIfUELOANeshoNgwVhFADjtUIjIhQ
+        AIyRnzSoxSRSWklITMgdjQZTthwsnBVLWyfSsAdLzOnEqmMCGBlTYGjtqvKbBoATRwkPkOTSbUhZClVzjiLLIFEMuptuodeRKXUaBfUhVTtasFsZdVnKtEfL
+        ldJYsxjlrBADRqhEBEmBKxlXKgEhiKcwAdztcETMUteJwadfaZLEBRjwJOGaIMhsfAxtuBQWyQLGXPDlFQmkcMsKsGUlQBEAubDqbuBYqXLZgmhPftLkYaCY
+        GReLCVXssOxzJFJwnxKJzaaYzfVpbHYBtiBeQZRilJZqrrMTrVtYAcwGxAAddwtlxzdZebfZHjzqRmrrBPNbkVHqjCHtVKUjIDPVSrtyEsPRPoyyPOFOSBcg
+        ClTzlAIPmPMkdlpFHctzKGpyQMInMwPKojVErCOrHbCsZoEXqyOcHReSybmxwYabyioVnDxPEvskutVHLWQTNudmKICoaoSGKqONrBmvtGNBKAaJxCRKTDOI
+        qrJOsQVOmGxmuIDEddVYvDwILTyushOAiXbkRIKgNLnFJdOagmiOHKRBKIIkxkOUeZWMRNlqpJdFgKjrGhIzrgBtgjVOtZAskKRbqzRVwLUoUAtRpRkoRQNLI
+        rbLmmjZTugXJBNCscnMguKVAFDKpODtCsmdlBvQGALeBGUitYBxLYhJxeVcAnTWmTAvCITzdzqiBfEudEIBmkDAXIFmoOmsTMZDOnhXYrgMDlDbjednYWWJbG
+        hrXFrxMQmQSmRBwoOqWGbGmjZNlJCvSHvmtZUkIScWXVdfSsdvdyQNpGFIOuteXhCMLmmEHrMucEmFbCIOHTJINAuIUOPfAfijIPkZjppGCCSRJNXWNCmliwUg
+        ABkHWuelUWeLsyVKVcZWOSeiQBQibCQJQUgGkTrXZxdBLsgjeMIwOyORDBpywuvlrLScRNhvaCYaKKRvOZeqBebUWWFhNnIRJvedFNfFPgWZJgNRaUpyYWFNiXJ
+        fAqNjyCEQYwAdFBQKKolwrufmJOfrToJFEsoNjaphcNvfWGIjKrKZSoSJEsbRqNVcoprpcGrnBgcNAnWUFpRldcPJkPfaoLKRCmVyMAWMXmnScodKisCTqllZEWQQS
+        CFETxLNntgdcFEFRsTSIhuewwrHIlOeCcRqkzgQhKnKyHZHdFsMEKvPywLbjaspVxUMEkVzCGcGoTmaBjUMwJuAYdSTaYGDHHWDrvGgMVTtehpzfgofkmqtamffJbCKO
+        zJgPsHNEnFarjADJGyKLwwitCiBXIraUdZtZwNjUtGbWqxksepVYztIBrimByoYQfUQgOndzFmhnuSmhYWvHliWUHgbvBIkYasDElNsjcCLtMvjQEhJjWvlnAscPwOYf
+        elrfgfRAZGBxdFlMNkfYEWLbkfUhbRPHoDZsaAQdoKhAAWzOcHoAkkHPQMNIxgHNJaqEFBqCuMYEtLpMnIiMCWWEPnBYgYrxlXFGYpQWUNFevwcEUvUzDeSZNrdmahAfj
+        eLSAGjHVnqyTzJkiVXjDJXzOiszXQCErQwwDMMqjLxWebJwNAVdrXeyMDRYXmLMDnuWLVaShVGhlgvbjOdOnhCDTNVazYDnzstqxjOuWbLcDaavRumKUOQXBQwKtdFgOzXi
+        QKWFporrIcylIHlTmTKAIpBqNUbkajLTlwAHieCcqPIJYhegwQhWpYZdfxpQXDKtYzsrmnvdiTKgXfXKlIHPHlxQtqXGhMVPOBAKVZJfkrDNEwnQFwgfoHJSqQxTzRswVLrt
+        FgpVzKcLilgznElWUfhERyeUrCcFCuGJddlFHJrXsqRdUjqUwaBmJVNwjRbCFiVMOSFuNctNVzhmhUpoddsMPUFMvNIMsMjHIWYiLjhSajZqpDkMvUOUCbYKfNHGpdUeWGUtDXH
+        DNSCEXqYrhWhvnISnjfoBMCwwptksarPImRZaRxBMjoBdlmRGlIuQZDzCLnxxioATnGVFFTATUpeypOCaCeJAvPLxEXYzlCgXvXirGSZFyZPPSCdOSHxeELRsetFrWgqPNNpwgbg
+        BEYPOSpLWeVdqOxPaQnidyPVMmELzeJPWgNsWBdPJPjhkdGpeAYZfrBNqdbOwzbtLiWMPafjgWQNcWKqmcleWLcMJoGSAEIUyFuzElZKXonHOMDdGMtSKEFUWdfPfnDecKNhIj
+        AKRYmkXgpPAzlKIOpViZPkZdozzAoWwDnXkfDikvkXcQaoBtzKkcRhNpJRYaGTkdnlfotsJZsLqpYaWoK');
+ COMMIT; 
+ 
+ DECLARE
+    vs_sql_varchar2 VARCHAR2(4000);
+    vs_plsql_varchar2 VARCHAR2(32767);
+    
+ BEGIN
+ --CH07_VARCHAR2테이블의 값을 변수에 담는다.
+ SELECT VAR1
+  INTO vs_sql_varchar2
+  FROM ch07_varchar2;
+  
+ --PL/SQL 변수에 4000BYTE 이상 크기의 값을 넣는다. 
+  vs_plsql_varchar2 := vs_sql_varchar2 ||' - '||vs_sql_varchar2||' - '||vs_sql_varchar2;
+  
+ --각 변수 크기 출력
+ DBMS_OUTPUT.PUT_LINE('SQL VARCHAR2 길이: ' || LENGTHB(vs_sql_varchar2));
+ DBMS_OUTPUT.PUT_LINE('PL/SQL VARCHAR2 길이: ' || LENGTHB(vs_plsql_varchar2));
+ 
+ END;
+ 
+ 
+ --QUIZ_chap07_ex1
+ --1.구구단 중 3단 출력하는 익명 블록
+ DECLARE
+ BEGIN
+    DBMS_OUTPUT.PUT_LINE('3*1 = '||3*1);
+    DBMS_OUTPUT.PUT_LINE('3*2 = 6');
+    DBMS_OUTPUT.PUT_LINE('3*3 = 9');
+    DBMS_OUTPUT.PUT_LINE('3*4 = 12');
+    DBMS_OUTPUT.PUT_LINE('3*5 = 15');
+    DBMS_OUTPUT.PUT_LINE('3*6 = 18');
+    DBMS_OUTPUT.PUT_LINE('3*7 = 21');
+    DBMS_OUTPUT.PUT_LINE('3*8 = 24');
+    DBMS_OUTPUT.PUT_LINE('3*9 = 27');
+ END;
+ 
+ --2.사원테이블에서 201번 사원의 이름과 아메일 주소 출력하는 익명 블록
+ DECLARE 
+    vs_emp_name employees.emp_name%TYPE;
+    vs_emp_email employees.email%TYPE;
+ BEGIN
+  SELECT emp_name, email
+    INTO vs_emp_name, vs_emp_email
+    FROM employees
+   WHERE employee_id = 201;
+
+  DBMS_OUTPUT.PUT_LINE( vs_emp_name || ' - ' || vs_emp_email);
+ END;
+ 
+ --3.사원테이블에서 사번이 제일 큰 사원을 찾고, 이 '번호+1번'으로 아래의 사원을 사원테이블에 신규입력하는 익명 블록
+ DECLARE 
+    vs_emp_max_id employees.employee_id%TYPE;
+ BEGIN
+  SELECT MAX(employee_id)
+    INTO vs_emp_max_id
+    FROM employees;
+    
+ INSERT INTO EMPLOYEES(EMPLOYEE_ID,EMP_NAME,EMAIL,HIRE_DATE,DEPARTMENT_ID)
+ VALUES (vs_emp_max_id + 1,'HARRISON FORD','HARRIS',SYSDATE,50);
+
+ COMMIT;
+ 
+ END;
+ 
+ SELECT employee_id, emp_name, email
+     FROM employees
+ WHERE email = 'HARRIS' ;
+ 
+ --chap09(PL/SQL제어문)
+ --IF문
+ --조건이 1개일 경우( IF 조건 THEN 조건처리; END IF;)
+ --조건이 2개일 경우( IF 조건 THEN 조건처리1; ELSE 조건처리2; END IF;)
+ --조건이 N개일 경우( IF 조건 THEN 조건처리1; ELSIF 조건2 THEN 조건처리2; ... ELSE 조건처리N; END IF;) 
+ DECLARE
+   vn_num1 NUMBER := 1;
+   vn_num2 NUMBER := 2 ;
+ BEGIN	 
+	 IF vn_num1 >= vn_num2 THEN
+	    DBMS_OUTPUT.PUT_LINE(vn_num1 ||'이 큰 수');
+	 ELSE
+	    DBMS_OUTPUT.PUT_LINE(vn_num2 ||'이 큰 수');	 
+	 END IF;	
+ END;
+ 
+ 
+ --DBMS_RANDOM 문법
+ --SELECT DBMS_RANDOM.NORMAL,
+ --       DBMS_RANDOM.RNADOM,
+ --       DBMS_RANDOM.STRING (옵션, 길이)
+ --       DBMS_RANDOM.VALUE (최소, 최대)
+ --       FROM DUAL
+ 
+--DBMS_RANDOM 함수를 이용하여 임의의 부서번호를 추출하고 해당부서 직원 1명뽑아서 급여 인출
+--SALARY가 3000이하면 '낮음', 3001-6000 '중간', 6001-10000 '높음', 그 이상은 '최상위'
+ DECLARE
+    vn_salary NUMBER := 0;
+    vn_department_id NUMBER := 0;
+ BEGIN
+    vn_department_id := ROUND(DBMS_RANDOM.VALUE(10,120), -1); 
+    
+ SELECT salary
+   INTO vn_salary
+   FROM employees
+  WHERE department_id = vn_department_id
+      AND ROWNUM = 1;
+ 
+ DBMS_OUTPUT.PUT_LINE(vn_salary);
+ 
+ IF vn_salary BETWEEN 1 AND 3000 THEN
+     DBMS_OUTPUT.PUT_LINE('낮음');
+  
+  ELSIF vn_salary BETWEEN 3001 AND 6000 THEN
+     DBMS_OUTPUT.PUT_LINE('중간');
+  
+  ELSIF vn_salary BETWEEN 6001 AND 10000 THEN
+     DBMS_OUTPUT.PUT_LINE('높음');  
+  ELSE
+     DBMS_OUTPUT.PUT_LINE('최상위');
+  END IF;     
+	
+ END;
+ 
+ DECLARE
+   vn_salary NUMBER := 0;
+   vn_department_id NUMBER := 0;
+   vn_commission NUMBER := 0;
+ BEGIN
+	
+	vn_department_id := ROUND(DBMS_RANDOM.VALUE (10, 120), -1);
+  
+   SELECT salary, commission_pct
+     INTO vn_salary, vn_commission
+     FROM employees
+    WHERE department_id = vn_department_id
+      AND ROWNUM = 1;
+
+  DBMS_OUTPUT.PUT_LINE(vn_salary);
+  
+  IF vn_commission > 0 THEN
+     IF vn_commission > 0.15 THEN
+        DBMS_OUTPUT.PUT_LINE(vn_salary * vn_commission );
+     END IF;  
+  ELSE
+     DBMS_OUTPUT.PUT_LINE(vn_salary);
+  END IF;  
+ END;
+ 
+ --CASE 문
+ DECLARE
+   vn_salary NUMBER := 0;
+   vn_department_id NUMBER := 0;
+ BEGIN
+	
+	vn_department_id := ROUND(DBMS_RANDOM.VALUE (10, 120), -1);
+  
+   SELECT salary
+     INTO vn_salary
+     FROM employees
+    WHERE department_id = vn_department_id
+      AND ROWNUM = 1;
+
+  DBMS_OUTPUT.PUT_LINE(vn_salary);
+  
+  CASE WHEN vn_salary BETWEEN 1 AND 3000 THEN
+            DBMS_OUTPUT.PUT_LINE('낮음');
+       WHEN vn_salary BETWEEN 3001 AND 6000 THEN
+            DBMS_OUTPUT.PUT_LINE('중간');
+       WHEN vn_salary BETWEEN 6001 AND 10000 THEN
+            DBMS_OUTPUT.PUT_LINE('높음');
+       ELSE 
+            DBMS_OUTPUT.PUT_LINE('최상위');
+  END CASE;
+
+ END; 
+ 
+ --LOOP문: 루프를 돌며 반복해서 로직을 처리하는 반복문
+ --        루프를 돌다가 EXIT WHEN 조건을 만나면 루프 종료
+ --구구단 출력
+ DECLARE
+   vn_base_num NUMBER := 3;
+   vn_cnt      NUMBER := 1;
+ BEGIN   
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || vn_cnt || '= ' || vn_base_num * vn_cnt);
+      
+      vn_cnt := vn_cnt + 1;     -- vn_cnt 값을 1씩 증가
+      
+      EXIT WHEN vn_cnt >9;      -- vn_cnt가 9보다 크면 루프 종료
+   
+   END LOOP;
+    
+ END;
+
+ --WHILE문: 반복문의 일종
+ --         WHILE 다음에 조건을 붙여 해당 조건을 만족할때만 루프를 돌면서 로직처리
+ --EX)WHILE 문으로 구구단 출력
+ DECLARE 
+    vn_base_num NUMBER := 4;
+    vn_cnt      NUMBER := 1;
+ BEGIN
+    WHILE vn_cnt <= 9        -- vn_cnt가 9보다 작거나 같을때만 반복처리
+    LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || vn_cnt || '= ' || vn_base_num * vn_cnt);
+      
+      vn_cnt := vn_cnt + 1;     -- vn_cnt 값을 1씩 증가    
+   
+   END LOOP;
+    
+ END;
+
+ DECLARE
+   vn_base_num NUMBER := 3;
+   vn_cnt      NUMBER := 1;
+ BEGIN
+   
+   WHILE  vn_cnt <= 9               -- vn_cnt가 9보다 작거나 같을 경우에만 반복처리 
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || vn_cnt || '= ' || vn_base_num * vn_cnt);
+      EXIT WHEN vn_cnt = 5;         -- vn_cnt 값이 5가 되면 루프 종료
+      vn_cnt := vn_cnt + 1;         -- vn_cnt 값을 1씩 증가
+   END LOOP;    
+ END;
+ 
+ --FOR문: 반복문/ IN 다음 조건이 만족할 경우 루프
+ DECLARE
+   vn_base_num NUMBER := 3;
+ BEGIN   
+   FOR i IN 1..9 
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || i || '= ' || vn_base_num * i);      
+   END LOOP;    
+ END;
+ 
+ DECLARE
+   vn_base_num NUMBER := 3;
+ BEGIN   
+   FOR i IN REVERSE 1..9        --REVERSE 3*9 부터 출력
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || i || '= ' || vn_base_num * i);      
+   END LOOP;    
+ END;
+ 
+ --CONTINUE문: 반복문 내에서 특정조건에 부합할때 처리 로직을 건너뛰고 상단의 루프 조건으로 건너가 루프를 계속 수행
+ DECLARE
+   vn_base_num NUMBER := 3;
+ BEGIN   
+   FOR i IN 1..9 
+   LOOP
+      CONTINUE WHEN i=5;        --3*5는 수행하지 않음
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || i || '= ' || vn_base_num * i);
+   END LOOP;    
+ END;
+ 
+ --GOTO문: GOTO라벨; / GOTO문이 지정하는 라벨로 제어가 넘어감
+ DECLARE
+   vn_base_num NUMBER := 3;
+ BEGIN   
+   <<third>>
+   FOR i IN 1..9 
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || i || '= ' || vn_base_num * i);      
+      IF i = 3 THEN
+         GOTO fourth;       --3*3호출이 끝나면 (GOTO) 4단으로 넘어감
+      END IF;   
+   END LOOP;  
+   
+   <<fourth>>
+   vn_base_num := 4;
+   FOR i IN 1..9 
+   LOOP
+      DBMS_OUTPUT.PUT_LINE (vn_base_num || '*' || i || '= ' || vn_base_num * i);
+   END LOOP;       
+ END;
+ 
+ --NULL문: 아무것도 처리하지 않는 문장
+ IF vn_variable = 'A' THEN
+   처리로직1;
+ ELSIF vn_variable = 'B' THEN
+   처리로직2;
+   ...
+ ELSE NULL;
+ END IF;
+
+ CASE WHEN vn_variable = 'A' THEN
+          처리로직1;
+     WHEN vn_variable = 'B' THEN
+          처리로직2;      
+          ...
+     ELSE NULL;
+  CASE;    
+
+ --%ROWTYPE
+-->변수명 테이블명%ROWTYPE;
+-->변수명에  테이블에 들어있는 컬럼들을 담고 SELECT 시 INTO절에 테이블명.변수명으로 값을 넣어준 뒤 사용
+-->변수하나만 생성해도 원하는 테이블 전체의 컬럼 선택가능
+-->이후테이블을 변경시 자동갱신
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

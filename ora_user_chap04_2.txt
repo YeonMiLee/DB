@@ -1,0 +1,139 @@
+ --기본집계함수
+ --COUNT(expr): 쿼리 결과 건수, 전체 로우 수를 반환(테이블 전체 로우 + WHERE 조건으로 걸러진 로우 수를 반환)/NULL은 제외
+ SELECT COUNT(*)
+   FROM employees;
+   
+ SELECT COUNT(employee_id)
+   FROM employees;
+   
+ SELECT COUNT(department_id)
+   FROM employees;
+   
+ --DISTINCT-예약어: 뒤따라 나오는 컬럼에 있는 유일한 값만 조회 - 중복제거 후 반환  
+ SELECT COUNT(DISTINCT department_id)
+   FROM employees;
+   
+ --NULL까지 포함
+ SELECT DISTINCT department_id
+   FROM employees
+ ORDER BY 1;   --첫번째컬럼
+ 
+ SELECT DISTINCT department_id
+   FROM employees
+ ORDER BY 2, 1;   
+ 
+ --SUM(expr): expr의 전체 합계 
+ --AVG(expr): 평균값반환 
+ --MIN(expr): 최소값/ MAX(expr): 최대값
+ SELECT SUM(salary)
+   FROM employees;
+   
+ SELECT SUM(salary), SUM(DISTINCT salary) --DISTINCT 중복된 급여는 한번만 셈해진 합계 반환
+   FROM employees;
+   
+ SELECT AVG(salary)
+   FROM employees;
+   
+ SELECT AVG(salary), AVG(DISTINCT salary)
+   FROM employees;
+   
+ SELECT MIN(salary), MAX(salary)
+   FROM employees; 
+ 
+ --VARIANCE(expr): 분산(주어진 범위의 개별값과 평균값의 차이인 편차를 구해 이를 제곱해서 평균한 값) 
+ --STDDEV(expr): 표준편차(분산값의 제곱근)
+ SELECT VARIANCE(salary), STDDEV(salary)
+   FROM employees; 
+   
+ --GROUP BY(특정그룹으로 묶어 데이터 집계)
+ SELECT department_id, SUM(salary), AVG(salary)
+   FROM employees
+ GROUP BY department_id
+ ORDER BY department_id;
+ 
+ SELECT period, region, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY period, region
+ ORDER BY period, region;
+ 
+ SELECT period, region, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period = '201311'
+ GROUP BY period, region
+ ORDER BY period, region;
+ 
+ --HAVING(GROUP BY한 결과를 대상으로 다시 필터 역할/ 
+ --         SELECT LIST에 사용했던 집계함수를 이용한 조건 명시)
+ SELECT period, region, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period = '201311'
+ GROUP BY period, region
+ HAVING SUM(loan_jan_amt) > 100000
+ ORDER BY period, region;
+ 
+ --ROLLUP 와 CUBE 절: GROUP BY 절에서 사용되어 그룹별 소계를 추가로 보여줌
+ --ROLLUP(expr1,expr2,...): expr로 명시한 표현식을 기준으로 집계한 결과(추가적인 집계 정보)
+ -- expr 기준으로 소연산 진행/expr로 명시한 표현식 수와 순서에 따라 레벨 별로 집계
+ -- expr 개수가 n이면 n+1레벨까지,하위에서 상위레벨 순으로 데이터 집계
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY period, gubun 
+ ORDER BY period;
+ 
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY ROLLUP(period, gubun)
+ ORDER BY period;
+ 
+ --분할ROLLUP
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY period, ROLLUP(gubun)
+ ORDER BY period;
+ 
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY ROLLUP(period),gubun
+ ORDER BY gubun;
+ 
+ --CUBE(expr1,expr2,...): GROUP BY 절에서 사용/ 명시한 표현식 개수에 따라 가능한 모든 조합별로 집계
+ --                       expr 개수가 3개이면 2의 3승, 즉 총 8가지 종류로 집계됨
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY CUBE(period, gubun);
+
+ --분할CUBE
+ SELECT period, gubun, SUM(loan_jan_amt) totl_jan
+   FROM kor_loan_status
+ WHERE period LIKE '2013%'
+ GROUP BY period, CUBE(gubun);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

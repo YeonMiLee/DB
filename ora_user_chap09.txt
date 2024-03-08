@@ -1,0 +1,612 @@
+
+--chap09(PL/SQL제어문)
+--PL/SQL의 사용자 정의 함수
+--함수생성 (사용자가 직접 만들어 사용하는 함수)
+ CREATE OR REPLACE FUNCTION my_mod ( num1 NUMBER, num2 NUMBER )
+   RETURN NUMBER    -- 반환 데이터타입은 NUMBER
+ IS
+   vn_remainder NUMBER := 0;       -- 반환할 나머지
+   vn_quotient  NUMBER := 0;       -- 몫 
+ BEGIN	 
+	 vn_quotient  := FLOOR(num1 / num2);     -- 피제수/제수 결과에서 정수 부분을 걸러낸다
+	 vn_remainder := num1 - ( num2 * vn_quotient);      --나머지 = 피제수 - ( 제수 * 몫)	 
+	 RETURN vn_remainder;           -- 나머지를 반환	
+ END;	
+ 
+--매개변수가 있는 함수 호출 : 함수명(매개변수1, 매개변수2, ....)
+ SELECT my_mod(14, 3) reminder
+   FROM DUAL;   --오라클에서 기본제공하는 테이블 DUAL
+   
+   
+ CREATE OR REPLACE FUNCTION fn_get_country_name (p_country_id NUMBER)
+  RETURN VARCHAR2       --국가명을 반환하므로 반환 데이터타입은 VARCHAR2
+ IS
+  vs_country_name COUNTRIES.COUNTRY_NAME%TYPE;
+ BEGIN
+    SELECT country_name
+      INTO vs_country_name
+      FROM countries
+     WHERE country_id = p_country_id;
+     
+     RETURN vs_country_name;    --국가명 반환
+ END;
+ 
+ SELECT fn_get_country_name(52777) COUN1,
+        fn_get_country_name(10000) COUN2
+   FROM DUAL;
+   
+ --NULL은 왠만하면 치환시켜 표시
+  CREATE OR REPLACE FUNCTION fn_get_country_name (p_country_id NUMBER)
+  RETURN VARCHAR2       --국가명을 반환하므로 반환 데이터타입은 VARCHAR2
+ IS
+  vs_country_name COUNTRIES.COUNTRY_NAME%TYPE;
+  vn_count NUMBER := 0;
+ BEGIN
+    SELECT COUNT(*)
+      INTO vn_count
+      FROM countries
+     WHERE country_id = p_country_id;
+     
+     IF vn_count = 0 THEN vs_country_name := '해당국가 없음';
+     ELSE
+        SELECT country_name
+          INTO vs_country_name
+          FROM countries
+         WHERE country_id = p_country_id;
+      END IF;
+      
+    RETURN vs_country_name;    --국가명 반환
+ END;
+
+ SELECT fn_get_country_name(52777) COUN1,
+        fn_get_country_name(10000) COUN2
+   FROM DUAL;
+   
+   
+--매개변수가 없는 함수 호출 : 함수명 혹은 함수명()
+ CREATE OR REPLACE FUNCTION fn_get_user
+    RETURN VARCHAR2 --반환데이터타입
+ IS
+    vs_user_name VARCHAR2(80);
+ BEGIN
+    SELECT USER
+      INTO vs_user_name
+      FROM DUAL;
+    RETURN vs_user_name;    --사용자 이름 반환
+ END;
+ 
+ SELECT fn_get_user(), fn_get_user
+   FROM DUAL;
+   
+   
+   
+--<프로시저>
+--프로시저 생성
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+    ( p_job_id    IN JOBS.JOB_ID%TYPE,          --IN부분생략가능(디폴트값 = IN)
+      p_job_title IN JOBS.JOB_TITLE%TYPE,
+      p_min_sal   IN JOBS.MIN_SALARY%TYPE,
+      p_max_sal   IN JOBS.MAX_SALARY%TYPE )
+  IS     --변수가 없어도 IS는 필수 입력
+  BEGIN
+    INSERT INTO JOBS(job_id, job_title, min_salary, max_salary, create_date, update_date)
+        VALUES(p_job_id, p_job_title, p_min_sal, p_max_sal, SYSDATE, SYSDATE);
+    COMMIT;
+ END;
+ 
+--프로시저실행 (반환값이 없으므로 SELECT절로 사용할 수 없음)
+-->EXEC 혹은 EXECUTE 프로시저명(매개변수1 값, 매개변수2 값, ...);
+-->EXEC 혹은 EXECUTE 프로시저명(매개변수1 => 매개변수1 값, ...);
+--PL/SQL 블록내에서 프로시저를 실행할때는 EXEC나EXECUTE를 붙이지 않는다
+ EXEC my_new_job_proc ('SM_JOB1', 'Sample JOB1', 1000, 5000);
+ 
+ SELECT *
+  FROM jobs
+ WHERE job_id = 'SM_JOB1';
+ 
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+          ( p_job_id    IN JOBS.JOB_ID%TYPE,
+            p_job_title IN JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN JOBS.MIN_SALARY%TYPE,
+            p_max_sal   IN JOBS.MAX_SALARY%TYPE )
+ IS
+  vn_cnt NUMBER := 0;
+ BEGIN	
+	-- 동일한 job_id가 있는지 체크
+	SELECT COUNT(*)
+	  INTO vn_cnt
+	  FROM JOBS
+	 WHERE job_id = p_job_id;
+   -- 없으면 INSERT 
+	IF vn_cnt = 0 THEN
+    INSERT INTO JOBS (job_id, job_title, min_salary, max_salary, create_date, update_date)
+         VALUES (p_job_id, p_job_title, p_min_sal, p_max_sal, SYSDATE, SYSDATE);
+    ELSE            -- 있으면 UPDATE	
+	   UPDATE JOBS
+	      SET job_title   = p_job_title,
+	          min_salary  = p_min_sal,
+	          max_salary  = p_max_sal,
+	          update_date = SYSDATE
+	    WHERE job_id = p_job_id;
+      END IF;
+	          
+	COMMIT;
+	
+ END ;    
+  
+ EXEC my_new_job_proc('SM_JOB1', 'Sample JOB1', 2000, 6000);  
+ EXEC my_new_job_proc('SM_JOB2', 'Sample JOB2', 3000, 8000);  
+ 
+ SELECT *
+  FROM jobs
+ WHERE job_id = 'SM_JOB2';
+        
+ 
+ --매개변수 디폴트 값 설정
+ EXEC my_new_job_proc('SM_JOB1', 'Sample JOB1');        --오류
+ 
+ EXEC my_new_job_proc ('SM_JOB1', 'Sample JOB1'); 
+ 
+ 
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+          ( p_job_id    IN JOBS.JOB_ID%TYPE,
+            p_job_title IN JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN JOBS.MIN_SALARY%TYPE := 10,      --디폴트값설정 (IN일때만 가능)
+            p_max_sal   IN JOBS.MAX_SALARY%TYPE := 100 )    --디폴트값설정 (IN일때만 가능)
+ IS
+  vn_cnt NUMBER := 0;
+ BEGIN	
+	-- 동일한 job_id가 있는지 체크
+	SELECT COUNT(*)
+	  INTO vn_cnt
+	  FROM JOBS
+	 WHERE job_id = p_job_id;	 
+	-- 없으면 INSERT 
+	IF vn_cnt = 0 THEN 	
+	   INSERT INTO JOBS ( job_id, job_title, min_salary, max_salary, create_date, update_date)
+            VALUES ( p_job_id, p_job_title, p_min_sal, p_max_sal, SYSDATE, SYSDATE);	             
+	ELSE -- 있으면 UPDATE	
+	   UPDATE JOBS
+	      SET job_title   = p_job_title,
+	          min_salary  = p_min_sal,
+	          max_salary  = p_max_sal,
+	          update_date = SYSDATE
+	    WHERE job_id = p_job_id;	
+  END IF;	          
+	COMMIT;	
+END ;  
+ 
+ 
+--OUT, IN OUT 매개변수
+-->매개변수는 디폴트 IN(입력) 매개변수
+-->OUT 매개변수: 프로시저 호출 후 해당 매개변수 값을 받아 사용 가능(사용자정의함수와비슷한기능)
+-->IN OUT 매개변수: 입력과 출력 매개변수로 동시 사용 가능
+--   프로시저 호출 시 값을 전달할 수도 있고, 프로시저 수행 후 다시 해당 매개변수 값을 가져올 수 있음
+-->OUT, IN OUT 매개변수의 경우 반드시 명시적으로 OUT, IN OUT 명시해야함
+
+--OUT 
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+          ( p_job_id    IN  JOBS.JOB_ID%TYPE,
+            p_job_title IN  JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN  JOBS.MIN_SALARY%TYPE := 10,
+            p_max_sal   IN  JOBS.MAX_SALARY%TYPE := 100,
+            p_upd_date  OUT JOBS.UPDATE_DATE%TYPE  )
+ IS
+  vn_cnt NUMBER := 0;
+  vn_cur_date JOBS.UPDATE_DATE%TYPE := SYSDATE;
+ BEGIN	
+	-- 동일한 job_id가 있는지 체크
+	SELECT COUNT(*)
+	  INTO vn_cnt
+	  FROM JOBS
+	 WHERE job_id = p_job_id;	 
+	-- 없으면 INSERT 
+	IF vn_cnt = 0 THEN 	
+	   INSERT INTO JOBS ( job_id, job_title, min_salary, max_salary, create_date, update_date)
+            VALUES ( p_job_id, p_job_title, p_min_sal, p_max_sal, vn_cur_date, vn_cur_date);	             
+	ELSE -- 있으면 UPDATE	
+	   UPDATE JOBS
+	      SET job_title   = p_job_title,
+	          min_salary  = p_min_sal,
+	          max_salary  = p_max_sal,
+	          update_date = vn_cur_date
+	    WHERE job_id = p_job_id;	
+  END IF;  
+	-- OUT 매개변수에 일자 할당
+	p_upd_date := vn_cur_date;	          
+	COMMIT;	
+ END ;    
+ 
+ DECLARE
+   vd_cur_date JOBS.UPDATE_DATE%TYPE;
+ BEGIN
+	 my_new_job_proc ('SM_JOB1', 'Sample JOB1', 2000, 6000, vd_cur_date);
+	 
+	 DBMS_OUTPUT.PUT_LINE(vd_cur_date);
+ END; 
+ 
+ --익명블록에서 프로시저 호출할때는 FUNCTION호출하듯이
+ --EXEC 혹은 EXECUTE 안씀
+ 
+ --IN OUT
+ CREATE OR REPLACE PROCEDURE my_parameter_test_proc (
+                             p_var1        VARCHAR2,
+                             p_var2 OUT    VARCHAR2,
+                             p_var3 IN OUT VARCHAR2 )
+ IS
+ BEGIN
+	 DBMS_OUTPUT.PUT_LINE('p_var1 value = ' || p_var1);
+	 DBMS_OUTPUT.PUT_LINE('p_var2 value = ' || p_var2);
+	 DBMS_OUTPUT.PUT_LINE('p_var3 value = ' || p_var3);
+	 
+	 p_var2 := 'B2';
+	 p_var3 := 'C2';
+	
+ END;    
+ 
+ DECLARE 
+   v_var1 VARCHAR2(10) := 'A';
+   v_var2 VARCHAR2(10) := 'B';
+   v_var3 VARCHAR2(10) := 'C';
+ BEGIN
+	 my_parameter_test_proc (v_var1, v_var2, v_var3);
+	 
+	 DBMS_OUTPUT.PUT_LINE('v_var2 value = ' || v_var2);
+	 DBMS_OUTPUT.PUT_LINE('v_var3 value = ' || v_var3);
+ END;
+ 
+ 
+--RETURN문
+--사용자정의 함수에서 RETURN문은 값을 반환하는 역할
+--프로시저에서는 RETURN문을 만나면 이후 로직을 처리하지않고 프로시저 종료
+--사용자정의함수 -> RETURN 값;
+--프로시저 -> RETURN
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+          ( p_job_id    IN  JOBS.JOB_ID%TYPE,
+            p_job_title IN  JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN  JOBS.MIN_SALARY%TYPE := 10,
+            p_max_sal   IN  JOBS.MAX_SALARY%TYPE := 100
+            --p_upd_date  OUT JOBS.UPDATE_DATE%TYPE  
+            )
+ IS
+  vn_cnt NUMBER := 0;
+  vn_cur_date JOBS.UPDATE_DATE%TYPE := SYSDATE;
+ BEGIN
+	-- 1000 보다 작으면 메시지 출력 후 빠져나간다
+	IF p_min_sal < 1000 THEN
+	   DBMS_OUTPUT.PUT_LINE('최소 급여값은 1000 이상이어야 합니다');
+	   RETURN;
+    END IF;  
+    -- 동일한 job_id가 있는지 체크
+	SELECT COUNT(*)
+	  INTO vn_cnt
+	  FROM JOBS
+	 WHERE job_id = p_job_id;
+	 
+	-- 없으면 INSERT 
+	IF vn_cnt = 0 THEN 	
+	   INSERT INTO JOBS ( job_id, job_title, min_salary, max_salary, create_date, update_date)
+            VALUES ( p_job_id, p_job_title, p_min_sal, p_max_sal, vn_cur_date, vn_cur_date);
+	             
+	ELSE -- 있으면 UPDATE	
+	   UPDATE JOBS
+	      SET job_title   = p_job_title,
+	          min_salary  = p_min_sal,
+	          max_salary  = p_max_sal,
+	          update_date = vn_cur_date
+	    WHERE job_id = p_job_id;	
+     END IF;
+   COMMIT;	
+ END ;   
+ 
+ EXEC my_new_job_proc ('SM_JOB1', 'Sample JOB1', 999, 6000);
+ 
+ 
+ 
+ --QUIZ_chap08_ex1
+ --1.SQL 함수 중 INITCAP = 매개변수로 전달한 문자열에서 앞글자만 대문자로 변환하는 함수
+ --INITCAP과 똑같이 동작하는 my_initcap 이란 이름으로 함수만들기 (단,여기서는 공백 한 글자로 단어사이를 구분한다고 가정)
+ 
+ CREATE OR REPLACE FUNCTION my_initcap (ps_string VARCHAR2 )
+   RETURN VARCHAR2
+ IS
+   vn_pos1   NUMBER := 1;   -- 각 단어 시작 위치
+   vs_temp   VARCHAR2(100) :=  ps_string;
+   vs_return VARCHAR2(80);  -- 반환할 대문자로 변환된 문자열 변수
+   vn_len    NUMBER;        -- vs_temp의 길이
+ BEGIN   
+   WHILE vn_pos1 <> 0 -- 공백문자를 발견하지 못할 때까지 루프를 돈다. 
+    LOOP
+       -- 공백문자의 위치를 가져온다. 
+       vn_pos1 := INSTR(vs_temp, ' ');
+       
+       IF vn_pos1 = 0 THEN -- 공백문자를 발견하지 못했을 경우, 즉 맨 마지막 단어일 경우....
+          vs_return := vs_return || UPPER(SUBSTR(vs_temp, 1, 1)) ||SUBSTR(vs_temp, 2, vn_len -1);
+       ELSE -- 공백문자 위치를 기준으로, 맨 첫자는 UPPER를 사용해 대문자로 변환하고, 나머지 문자를 잘라서 변수에 넣는다. 
+          vs_return := vs_return || UPPER(SUBSTR(vs_temp, 1, 1)) ||SUBSTR(vs_temp, 2, vn_pos1 -2) || ' ';
+       END IF;      
+
+       vn_len := LENGTH(vs_temp);
+       
+       -- vs_temp 변수는 최초 전체 문자열이 들어오며, 루프를 돌면서 한 단어씩 차례로 없앤다.
+       vs_temp := SUBSTR(vs_temp, vn_pos1+1, vn_len - vn_pos1);
+   
+    END LOOP;  
+   RETURN vs_return;
+ END;
+ 
+ SELECT my_initcap ('my favorite color is green')
+   FROM DUAL; 
+ 
+ --2.날짜형 SQL 함수 중에는 해당 월 마지막 일자를 반환하는 LAST_DAY
+ --매개변수로 문자형으로 일자를 받아, 해당일자의 월 마지막날짜를 문자형으로 반환하는 함수를 my_last_day란 이름으로
+ CREATE OR REPLACE FUNCTION my_last_day (input_date VARCHAR2)
+    RETURN VARCHAR2
+ IS
+   input_date  VARCHAR2(30) := input_date;
+   last_date   VARCHAR2(50);
+ BEGIN
+	 input_date := REPLACE(input_date, '-', '');	
+     last_date := SUBSTR(input_date, 5, 2);
+	  
+  CASE WHEN last_date = 01 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');  
+       WHEN last_date = 03 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');
+       WHEN last_date = 04 THEN 
+            DBMS_OUTPUT.PUT_LINE('30일');      
+       WHEN last_date = 05 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');
+       WHEN last_date = 06 THEN 
+            DBMS_OUTPUT.PUT_LINE('30일');      
+       WHEN last_date = 07 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');
+       WHEN last_date = 08 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');
+       WHEN last_date = 09 THEN 
+            DBMS_OUTPUT.PUT_LINE('30일');      
+       WHEN last_date = 10 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');  
+       WHEN last_date = 11 THEN 
+            DBMS_OUTPUT.PUT_LINE('30일');      
+       WHEN last_date = 12 THEN 
+            DBMS_OUTPUT.PUT_LINE('31일');  
+       ELSE 
+            DBMS_OUTPUT.PUT_LINE('28일');
+  END CASE;
+ END;   
+ --내 코드 오류...
+ 
+ --TEACHER
+ CREATE OR REPLACE FUNCTION my_last_day ( p_input_date VARCHAR2)
+    RETURN VARCHAR2
+ IS
+   vs_input_date  VARCHAR2(10) := p_input_date;
+   vs_temp_year   VARCHAR2(4);
+   vs_temp_month  VARCHAR2(2);   
+   vs_return_date VARCHAR2(50);
+ BEGIN	 
+	 -- 입력일자에서 '-'를 제거 
+	 vs_input_date := REPLACE(vs_input_date, '-', '');
+	
+	 -- 입력일자에서 '-'를 제거한 문자열 길이가 8이 아닐 경우 오류 메시지 출력
+	 IF LENGTH(vs_input_date) <> 8 THEN
+	    vs_return_date := '입력일자 오류';
+	 ELSE
+	   vs_temp_year  := SUBSTR(vs_input_date, 1, 4); -- 년도를 가져옴
+	   vs_temp_month := SUBSTR(vs_input_date, 5, 2); -- 월을 가져옴
+	   
+       --입력된 월의 다음월 시작일의 전날짜 찾기
+	   IF vs_temp_month = '12' THEN -- 월이 12월이면 
+	      -- 년도는 +1, 
+	      vs_temp_year := TO_CHAR(TO_NUMBER(vs_temp_year) + 1);
+	      -- 월은 무조건 1월 
+	      vs_temp_month := '01';	      
+	   ELSE
+	      -- 12월이 아니면 기존 월에서 +1
+	      vs_temp_month := TRIM(TO_CHAR(TO_NUMBER(vs_temp_month) + 1, '00'));
+	   END IF;   
+	   
+	   -- 년도 + 다음월 + 01일에서 -1일을 하면 입력일자 월의 마지막 일자가 나옴
+	   vs_return_date := TO_CHAR(TO_DATE(vs_temp_year || vs_temp_month || '01', 'YYYY-MM-DD') -1, 'YYYYMMDD');
+	 END IF; 	 
+   RETURN vs_return_date;	
+ END;   
+ 
+ SELECT my_last_day('2024-02-09')
+   FROM DUAL;
+
+ 
+ --3.오른쪽의 프로시저는 이번장에서학습했던 my_new_job_proc 프로시저이다. 이 프로시저는 JOBS 테이블에 기존데이터가 없으면 INSERT, 
+ --있으면 UPDATE를 수행하는데 IF문을 사용해 구현하였다. IF문을 제거하고 동일한로직을 처리하도록MERGE문을 사용해my_new_job_proc2 란 프로시저 생성
+ CREATE OR REPLACE PROCEDURE my_new_job_proc 
+          ( p_job_id    IN JOBS.JOB_ID%TYPE,
+            p_job_title IN JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN JOBS.MIN_SALARY%TYPE,
+            p_max_sal   IN JOBS.MAX_SALARY%TYPE )
+ IS
+  vn_cnt NUMBER := 0;
+ BEGIN	
+	-- 동일한 job_id가 있는지 체크
+	SELECT COUNT(*)
+	  INTO vn_cnt
+	  FROM JOBS
+	 WHERE job_id = p_job_id;
+   -- 없으면 INSERT 
+	IF vn_cnt = 0 THEN
+    INSERT INTO JOBS (job_id, job_title, min_salary, max_salary, create_date, update_date)
+         VALUES (p_job_id, p_job_title, p_min_sal, p_max_sal, SYSDATE, SYSDATE);
+    ELSE            -- 있으면 UPDATE	
+	   UPDATE JOBS
+	      SET job_title   = p_job_title,
+	          min_salary  = p_min_sal,
+	          max_salary  = p_max_sal,
+	          update_date = SYSDATE
+	    WHERE job_id = p_job_id;
+      END IF;	          
+	COMMIT;	
+ END ; 
+ 
+ --MERGT문으로 변경
+ CREATE OR REPLACE PROCEDURE my_new_job_proc2
+          ( p_job_id    IN JOBS.JOB_ID%TYPE,
+            p_job_title IN JOBS.JOB_TITLE%TYPE,
+            p_min_sal   IN JOBS.MIN_SALARY%TYPE,
+            p_max_sal   IN JOBS.MAX_SALARY%TYPE )
+ IS
+  --vn_cnt NUMBER := 0; MERGE문 선언문 필요없음....
+ BEGIN	
+	MERGE INTO JOBS a     --my_new_job_proc2 a -> 내가쓴거
+         USING (SELECT p_job_id AS job_id         -- 동일한 job_id가 있는지 체크
+                  FROM DUAL) b
+            ON (a.job_id = b.job_id)
+    -- 있으면 UPDATE	        
+    WHEN MATCHED THEN        
+        UPDATE SET a.job_title   = p_job_title,
+                   a.min_salary  = p_min_sal,
+                   a.max_salary  = p_max_sal
+    -- 없으면 INSERT 
+    WHEN NOT MATCHED THEN   
+        INSERT (a.job_id, a.job_title, a.min_salary, a.max_salary, a.create_date, a.update_date)
+        VALUES (p_job_id, p_job_title, p_min_sal, p_max_sal, SYSDATE, SYSDATE);    
+   COMMIT;
+  END; 
+  
+ 
+ --4.부서 테이블의 복사본 테이블을 다음과 같이 만들어보자.
+ --위 테이블을 대상으로 다음과 같은 처리를 하는 프로시저를 my_dept_manage_proc란 이름으로 만들어보자.
+ --(1) 매개변수 : 부서번호, 부서명, 상위부서번호, 동작 flag 
+ --(2) 동작 flag 매개변수 값은 'upsert' -> 데이터가 있으면 UPDATE, 아니면 INSERT  'delete' -> 해당 부서 삭제
+ --(3) 삭제 시, 만약 해당 부서에 속한 사원이 존재하는지 사원테이블을 체크해 존재하면 경고메시지와 함께 delete를 하지 않는다. 
+ CREATE TABLE ch09_departments AS
+ SELECT DEPARTMENT_ID, DEPARTMENT_NAME, PARENT_ID
+ FROM DEPARTMENTS;
+ 
+ CREATE OR REPLACE PROCEDURE my_dept_manage_proc  
+        ( my_dept_id    IN DEPARTMENTS.DEPARTMENT_ID%TYPE,
+          my_dept_name  IN DEPARTMENTS.DEPARTMENT_NAME%TYPE,
+          my_parent_id  IN DEPARTMENTS.PARENT_ID%TYPE,
+          my_flag       IN VARCHAR2 )
+ IS
+      vn_cnt1 NUMBER := 0;
+      vn_cnt2 NUMBER := 0;
+ BEGIN	
+	-- INSERT나 UPDATE 할 경우, 동작 flag 매개변수가 소문자로 들어올 수 있으므로 대문자로 변환 후 비교함 
+	IF UPPER(my_flag) = 'UPSERT' THEN
+	
+    MERGE INTO ch09_departments a
+         USING ( SELECT my_dept_id AS DEPARTMENT_ID         
+                   FROM DUAL ) b
+	        ON ( a.department_id = b.department_id )
+	   WHEN MATCHED THEN
+	     UPDATE SET a.department_name  = my_dept_name, 
+	                a.parent_id        = my_parent_id
+	   WHEN NOT MATCHED THEN 
+	     INSERT ( a.department_id, a.department_name, a.parent_id )
+	     VALUES ( my_dept_id, my_dept_name, my_parent_id );	
+	
+	-- 삭제할 경우
+	ELSIF UPPER(my_flag) = 'DELETE' THEN
+	
+	   -- 해당 부서가 있는지 체크
+	   SELECT COUNT(*)
+	     INTO vn_cnt1
+	     FROM ch09_departments
+	    WHERE department_id = my_dept_id;
+	    
+	   -- 해당 부서가 없으면 메시지와 함께 프로시저 종료 
+	   IF vn_cnt1 = 0 THEN
+	      DBMS_OUTPUT.PUT_LINE('해당 부서가 없어 삭제할 수 없습니다');
+	      RETURN;
+	   END IF;
+	   
+	   -- 해당 부서에 속한 사원이 있는지 체크
+	   SELECT COUNT(*)
+	     INTO vn_cnt2
+	     FROM employees
+	    WHERE department_id = my_dept_id;
+	    
+	   -- 해당 부서에 속한 사원이 있으면 메시지와 함께 프로시저 종료 
+	   IF vn_cnt2 > 0 THEN
+          DBMS_OUTPUT.PUT_LINE('해당 부서에 속한 사원이 존재하므로 삭제할 수 없습니다');
+        RETURN;	   	   
+	   END IF;
+	   
+	   DELETE ch09_departments
+	    WHERE department_id = my_dept_id;	
+    END IF;	
+  COMMIT;
+ END ; 
+    
+ EXEC my_dept_manage_proc (280, 'vip배송부', 10, 'upsert');
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

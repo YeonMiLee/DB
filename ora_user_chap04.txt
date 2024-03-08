@@ -1,0 +1,372 @@
+ --<숫자함수>
+ --ABS(n) : n의 절대값을 반환
+ SELECT ABS(10), ABS(-10), ABS(-10.123)
+   FROM DUAL;
+ --CEIL(n) : n과 같거나 가장 큰 정수 반환
+ SELECT CEIL(10.123), CEIL(10.541), CEIL(11.001)
+   FROM DUAL;
+ --FLOOR(n) : n보다 작거나 가장 큰 정수 반환
+ SELECT FLOOR(10.123), FLOOR(10.541), FLOOR(11.001)
+   FROM DUAL;
+ --ROUND(n,i) : n을 소수점 기준 (i+1)번째에서 반올림한 결과 반환
+ --ROUND(n)
+ SELECT ROUND(10.154), ROUND(10.541), ROUND(11.001)
+   FROM DUAL; 
+ --ROUND(n,i)
+ SELECT ROUND(10.154, 1), ROUND(10.154, 2), ROUND(10.154, 3)
+   FROM DUAL;
+ --ROUND : i가 음수일 경우 +1이 아니고 왼쪽에서(왼쪽방향으로) 반올림
+ SELECT ROUND(0, 3), ROUND(115.155, -1), ROUND(115.155, -2)
+   FROM DUAL;
+ --TRUNC(n1,n2) : n1을 소수점 기준 n2자리에서 무조건 잘라낸 결과 반환
+ SELECT TRUNC(115.155), TRUNC(115.155, 1), TRUNC(115.155, 2), TRUNC(115.155, -2)
+   FROM DUAL;
+ --POWER(n2,n1) : n2를 n1 제곱한 결과 반환 (n2가 음수일때는 n1은 정수만 가능)
+ SELECT POWER(3,2), POWER(3,3), POWER(3, 3.0001)
+   FROM DUAL;
+ SELECT POWER(-3, 3.0001)
+   FROM DUAL;
+ --SQRT(n) : n의 제곱근 반환
+ SELECT SQRT(2), SQRT(5)
+   FROM DUAL;
+ --MOD(n2,n1) : n2를 n1으로 나눈 나머지 값 반환
+ --(n2-n1*FLOOR(n2/n1))
+ SELECT MOD(19, 4), MOD(19.123, 4.2)
+   FROM DUAL;
+ --REMAINDER(n2,n1) : n2를 n1으로 나눈 나머지 값 반환
+ -- (나머지를 구하는 내부적 연산 방법이 MOD와 다름)
+ -- (n2-n1*ROUND(n2/n1))
+ SELECT REMAINDER(19, 4), REMAINDER(19.123, 4.2)
+   FROM DUAL;
+ --EXP(n)-지수함수로 n의 제곱근 반환
+ --LN(n)-자연로그함수로 밑수가 e인 로그함수
+ --LOG(n2,n1)-n2를 밑수로 하는 n1의 로그 값 반환
+ SELECT EXP(5), LN(2.713), LOG(10,100)
+   FROM DUAL;
+   
+ --<문자함수>   --현재 버전 한글 3바이트
+ --INITCAP(char): char의 첫문자는 대문자, 나머지는 소문자로 반환
+ SELECT INITCAP('never say goodbye'),INITCAP('never6say*goodbye')
+   FROM DUAL;
+ --LOWER(char): 모두 소문자로 / UPPER(char): 모두 대문자로
+ SELECT LOWER('NEVERSAYGOODBYE'), UPPER('NEVERSAYGOODBYE')
+   FROM DUAL;
+ --CONCAT(char1,char2): ||연산자처럼 두문자를 붙여 반환
+ SELECT CONCAT('I Have ', 'A Dream'), 'I Have ' || 'A Dream'
+   FROM DUAL;
+   
+ --현재 버전 한글 3바이트
+ --문자셋확인방법
+ --SELECT * FROM nls_database_parameters where parameter = 'NLS_CHARACTERSET';   
+ 
+ --SUBSTR(char,pos,len): char의 pos번째부터 len길이만큼 잘라낸 결과
+ SELECT SUBSTR('ABCDEFG', 1, 4), SUBSTR('ABCDEFG', -1, 4) 
+ --음수가 오면 char맨끝에서 시작한 상대적 위치 
+   FROM DUAL;
+ SELECT SUBSTR('ABCDEFG', 1, 4), SUBSTR('가나다라마바사', 1, 4)
+   FROM DUAL;
+ SELECT SUBSTR('ABCDEFG', 2, 3), SUBSTR('가나다라마바사', -3, 2)
+   FROM DUAL;
+   
+ --SUBSTRB(char,pos,len): 문자열의 byte수만큼 잘라낸 결과 반환
+ SELECT SUBSTRB('ABCDEFG', 1, 4), SUBSTRB('가나다라마바사', 1, 6)
+   FROM DUAL;
+   
+ --LTRIM(char,set): char에서 set로 지정된 문자열을 왼쪽끝에서 제거 한 후 나머지 문자 반환
+ --RTRIM(char,set): char에서 set로 지정된 문자열을 오른쪽끝에서 제거 한 후 나머지 문자 반환
+ SELECT LTRIM('ABCDEFGABC', 'ABC'), 
+        LTRIM('가나다라', '가'),
+        RTRIM('ABCDEFGABC', 'ABC'), 
+        RTRIM('가나다라', '라')
+   FROM DUAL;
+   
+ --LPAD(expr1,n,expr2): expr2문자열(생략할때 디폴트는 공백 한 문자)을 
+ --                     n자리만큼 왼쪽부터 채워 expr1 반환.
+ CREATE TABLE ex4_1 (
+    phone_num VARCHAR2(30)
+);
+ INSERT INTO ex4_1 VALUES ('111-1111');
+ INSERT INTO ex4_1 VALUES ('111-2222');
+ INSERT INTO ex4_1 VALUES ('111-3333');
+ 
+ SELECT * 
+ FROM ex4_1;
+ 
+ SELECT LPAD (phone_num, 12, '(02)')
+   FROM ex4_1;   
+   
+ --RPAD(expr1,n,expr2): LPAD와 반대로 오른쪽에 해당문자열을 채워 반환
+ SELECT RPAD (phone_num, 12, '(02)')
+   FROM ex4_1;  
+   
+ --REPLACE(char,search_str,replace_str): char에서 search_str을 찾아 replace_str으로 대체한 결과 반환
+ SELECT REPLACE('나는 너를 모르는데', '나', '너')
+   FROM DUAL;
+   
+ --LTRIM/RTRIM 공백제거안됨, REPLACE 공백제거가능
+ SELECT LTRIM(' ABC DEG'),
+        RTRIM(' ABC DEF '),
+        REPLACE(' ABC DEF ', ' ', '')
+   FROM DUAL;
+ 
+ --TRANSLATE(expr,from_str,to_str): expr문자열에서 from_str에 해당하는 문자를 찾아 to_str 반환
+ --문자열 자체가 아닌 한글자씩 매핑해 바꿈
+ SELECT TRANSLATE('나는 너를 모르는데 너는 나를 알겠는가', '나는', '너를') AS TRN
+   FROM DUAL;
+   
+ SELECT REPLACE('나는 너를 모르는데 너는 나를 알겠는가', '나는', '너를') AS REP,
+        TRANSLATE('나는 너를 모르는데 너는 나를 알겠는가', '나는', '너를') AS TRN
+  FROM DUAL;
+  
+ --TRANSLATE 어떤 경우에 사용하나
+ SELECT employee_id,
+    TRANSLATE(emp_name, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'thehollsarealivewiththesou')
+    AS TRANS_NAME
+  FROM employee;
+  
+ --INSTR(str,substr,pos,occur): str문자열에서 substr과 일치하는 위치를 반환
+ --pos는 시작위치, occur 몇번째 일치하는지 명시/ 생략하면 디폴트, 디폴트는 1
+ --문자열에서 해당 문자의 위치를 반환해주는 함수 - INSTR(문자열 또는 칼럼, 찾는 글자, 시작위치, 몇번째인지(기본값1))
+ SELECT INSTR('1234-12334-1234','5') AS "INSTR" 
+   FROM DUAL;       --5라는 문자 찾기=없으니 0을 반환함
+   
+ SELECT INSTR('1234-12334-1234','1') AS "INSTR" 
+   FROM DUAL;       --1이라는 문자 찾기=첫번째위치에 있기에 1반환
+   
+ SELECT INSTR('1234-12334-1234','1',8) AS "INSTR" 
+   FROM DUAL;       --1이라는 문자열 위치 8번째부터 찾기=8번째 다음으로는 11번째 있으니 11반환
+   
+ SELECT INSTR('1234-12334-1234','1',2,3) AS "INSTR" 
+   FROM DUAL;       --1이라는 문자를 2번째부터 시작해서 3번째의 값의 위치 찾기=2번째부터 시작하면 찾는 값이 없기에 0반환
+   
+ SELECT INSTR('내가 만약 외로울때면, 내가 만약 괴로울때면, 내가 만약 즐거울때면', '만약') 
+        AS INSTR1,
+        INSTR('내가 만약 외로울때면, 내가 만약 괴로울때면, 내가 만약 즐거울때면', '만약', 5) 
+        AS INSTR2,
+        INSTR('내가 만약 외로울때면, 내가 만약 괴로울때면, 내가 만약 즐거울때면', '만약', 5, 2) 
+        AS INSTR3
+  FROM DUAL;
+  
+ --LENGTH(chr): 문자열의 개수 반환
+ --LENGTHB(chr): 문자열의 바이트 수를 반환
+ SELECT LENGTH('대한민국'),
+        LENGTHB('대한민국')
+  FROM DUAL;
+  
+ --<날짜함수>
+ --SYSDATE: 현재일자 
+ --SYSTIMESTAMP: 현재시간
+ SELECT SYSDATE, SYSTIMESTAMP
+   FROM DUAL;
+   
+ --ADD_MONTHS(date,integer): 날짜에 integer만큼의 '월'을 더한 날짜를 반환
+ SELECT ADD_MONTHS(SYSDATE, 1), ADD_MONTHS(SYSDATE, -1)
+   FROM DUAL;
+ 
+ --MONTHS_BETWEEN(date1,date2): 두 날짜 사이의 개월 수 반환/ date2가 빠른날짜
+ SELECT MONTHS_BETWEEN(SYSDATE, ADD_MONTHS(SYSDATE, 1)) mon1,
+        MONTHS_BETWEEN(ADD_MONTHS(SYSDATE, 1), SYSDATE) mon2
+   FROM DUAL;
+ 
+ --LAST_DAY(date): date날짜를 기준으로 해당월의 마지막 일자를 반환
+ SELECT LAST_DAY(SYSDATE)
+   FROM DUAL;
+ 
+ --ROUND(date,format): format에 따라 반올림한 날짜
+ --TRUNC(date,format): 잘라낸 날짜
+ SELECT SYSDATE, ROUND(SYSDATE, 'month'), TRUNC(SYSDATE, 'month')
+   FROM DUAL;
+ 
+ --NEXT_DAY(date,char): date를 char에 명시한 날짜로 다음 주 주중 일짜를 반환
+ SELECT NEXT_DAY(SYSDATE, '금요일')
+   FROM DUAL;
+   
+ --<변환함수>
+ --TO_CHAR(숫자 혹은 날짜,format): 숫자나 날짜를 문자로 변환
+ SELECT TO_CHAR(123456789, '999,999,999')
+   FROM DUAL;
+   
+ SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+   FROM DUAL;
+ 
+ --TO_NUMBER(expr,format): 문자나 다른 유형의 숫자를 NUMBER형으로 변환
+ SELECT TO_NUMBER('123456')
+   FROM DUAL;
+ 
+ --TO_DATE(char,format): 문자를 날짜형으로 변환/ DATE 형으로
+ --TO_TIMESTAMP(char,format): 문자를 날짜형으로 변환/ TIMESTAMP 형으로
+ SELECT TO_DATE('20140201', 'YYYY-MM-DD')
+   FROM DUAL;
+ SELECT TO_TIMESTAMP('20140201 13:44:50', 'YYYY-MM-DD HH24:MI:SS')
+   FROM DUAL;
+
+ --EX)
+ SELECT NEXT_DAY(TO_DATE('20140201', 'YYYY-MM-DD'),'금요일')
+   FROM DUAL;
+   
+ --QUIZ_chap04_ex1
+ --1.사원테이블(employees)에는 phone_number라는 컬럼에 
+ --사원의 전화번호가 ###.###.####형태로 저장되어 있는데 처음 3자리 숫자 대신 (02)로 출력
+ SELECT employee_id,
+    LPAD(SUBSTR(phone_number, 5, 8), 12, '(02)') 
+   FROM employees;
+  
+ --2.현재일자 기준으로 사원테이블의 입사일자(hire_date)를 참조해서 근속년수가 10년 이상인
+ --사원을 출력(근속년수가 많은 사원 순으로/ 사번,이름,입사일자,근속년수)
+ SELECT employee_id AS 사원번호,
+        emp_name AS 이름,
+        hire_date AS 입사일자, 
+        ROUND((sysdate - hire_date) / 365) AS 근속년수
+  FROM employees
+ WHERE ROUND((sysdate - hire_date) / 365) >= 10
+ ORDER BY 근속년수 DESC; 
+ --ORDER BY 3; --3번째 컬럼인 입사일자 기준으로 오름차순 
+ 
+ --3.고객테이블(CUSTOMERS)에는 고객 전화번호(cust_main_phone_number)컬럼 존재
+ --값은 ###-###-####인데 '-'대신 '/' 바꿔서 출력
+ SELECT cust_main_phone_number, 
+    REPLACE(cust_main_phone_number, '-', '/') new_phone_number
+   FROM CUSTOMERS;
+   
+   
+
+  --<NULL 관련 함수>
+ --NVL(expr1,expr2): expr1이 NULL 일 때 expr2 반환 
+ SELECT NVL(manager_id, employee_id)
+   FROM employees
+ WHERE manager_id IS NULL;
+ 
+  --NVL2(expr1,expr2,expr3): NVL을 확장한 함수로 expr1이 NULL이 아니면 expr2 반환/
+ --                           NULL이면 expr3 반환
+ SELECT employee_id,
+    NVL2(commission_pct, salary + (salary*commission_pct),salary) AS salary2
+   FROM employees;
+ 
+ --COALESCE(expr1,expr2,...): 매개변수로 들어오는 표현식에서 NULL이 아닌 첫번째 표현식을 반환
+ SELECT employee_id, salary, commission_pct,
+    COALESCE(salary + (salary*commission_pct),salary) AS salary2
+   FROM employees;
+ 
+ --LNNVL(조건식): 매개변수로 들어오는 조건식의 결과가 FALSE나 UNKNOWN이면 TRUE 반환/ TRUE이면 FALSE반환
+ SELECT employee_id, commission_pct
+   FROM employees
+ WHERE commission_pct < 0.2; 
+ 
+ --SELECT COUNT(*)
+ SELECT employee_id, commission_pct
+   FROM employees
+ WHERE NVL(commission_pct, 0) < 0.2; 
+ 
+ SELECT COUNT(*) 
+   FROM employees
+ WHERE LNNVL(commission_pct >= 0.2); 
+ 
+ --NULLIF(expr1,expr2): expr1과 expr2를 비교해 같으면 NULL/ 다르면 expr1 반환
+ SELECT employee_id,
+  TO_CHAR(start_date, 'YYYY') start_year,
+  TO_CHAR(end_date, 'YYYY') end_year,
+  NULLIF(TO_CHAR(end_date, 'YYYY'), TO_CHAR(start_date, 'YYYY')) nullif_year
+   FROM job_history;
+   
+ 
+ --<기타함수>
+ --GREATEST(expr1,expr2,...): 매개변수로 들어오는 표현식에서 가장 큰 값 반환
+ --LEAST(expr1,expr2,...): 매개변수로 들어오는 표현식에서 가장 작은 값 반환
+ SELECT GREATEST(1,2,3,2),
+        LEAST(1,2,3,2)
+   FROM DUAL;
+   
+ SELECT GREATEST('이순신', '강감찬', '세종대왕'),
+        LEAST('이순신', '강감찬', '세종대왕')
+   FROM DUAL; 
+ 
+ --DECODE(expr,search1,result1,search2,result2,...,default): 
+ -- expr과 search1을 비교해 두값이 같으면 result1, 다르면 search2와 비교해서 같으면 result2 반환
+ -- 이런식으로 계속 비교 - 최종적으로 같은 값이 없으면 default 반환
+ SELECT prod_id,
+        DECODE(channel_id, 3, 'Direct',
+                           9, 'Direct',
+                           5, 'Indirect',
+                           4, 'Indirect',
+                             'Others') decode
+   FROM sales
+ WHERE rownum < 10; 
+ 
+ --QUIZ_chap04_ex5
+ --4.고객테이블(CUSTOMERS)의 고객 전화번호(cust_main_phone_number)컬럼을 다른 문자로 대체(암호화)
+ SELECT cust_name, cust_main_phone_number,
+    TRANSLATE (cust_main_phone_number, '0123456789', 'abcdefghij')
+  FROM CUSTOMERS;
+
+ --5.고객테이블(CUSTOMERS)에는 고객 출생년도(cust_year_of_birth)컬럼 존재. 
+ --  현재일 기준으로 30대,40대,50대 구분해 출력, 나머지 연령대는 기타로
+ SELECT cust_name, 
+        DECODE(TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)/10), 3, '30대', 4, '40대', 5, '50대', '기타') 연령대
+   FROM CUSTOMERS
+ ORDER BY 연령대;
+ 
+ --teacher 
+ SELECT cust_name, cust_year_of_birth,
+        TRUNC(TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) AS age,
+        DECODE(TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)/10), 3, '30대', 4, '40대', 5, '50대', '기타') GENERATION
+   FROM CUSTOMERS;
+ 
+ --6.(5번이랑 연결) 전 연령대 표시, DECODE대신 CASE 표현식 사용하기
+ SELECT cust_name,
+    CASE WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 1 THEN '10대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 2 THEN '20대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 3 THEN '30대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 4 THEN '40대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 5 THEN '50대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 6 THEN '60대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 7 THEN '70대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 8 THEN '80대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth) / 10) = 9 THEN '90대'
+         ELSE '100세이상'
+         END AS 연령대
+   FROM CUSTOMERS
+   ORDER BY 연령대 ASC;   
+   
+ --TEACHER 
+ SELECT cust_name, cust_year_of_birth,
+    CASE WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 1 AND 19 THEN '10대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 2 AND 29 THEN '20대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 3 AND 39 THEN '30대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 4 AND 49 THEN '40대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 5 AND 59 THEN '50대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 6 AND 69 THEN '60대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 7 AND 79 THEN '70대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 8 AND 89 THEN '80대'
+         WHEN TRUNC((TO_CHAR(SYSDATE, 'YYYY') - cust_year_of_birth)) BETWEEN 9 AND 99 THEN '90대'
+         ELSE '기타' END AS GENERATION
+   FROM CUSTOMERS;
+  
+        
+   
+   
+   
+   
+   
+   
+   
+   
+ 
+
+ 
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   

@@ -1,0 +1,527 @@
+--<집합연산자>
+--UNION: 합집합 의미/ 두 개 이상의 SELECT 쿼리 연결
+ CREATE TABLE exp_goods_asia (
+    COUNTRY VARCHAR2(10),
+    SEQ     NUMBER,
+    GOODS   VARCHAR2(80)
+ );
+ 
+ INSERT INTO exp_goods_asia VALUES ('한국', 1, '원유제외 석유류');
+ INSERT INTO exp_goods_asia VALUES ('한국', 2, '자동차');
+ INSERT INTO exp_goods_asia VALUES ('한국', 3, '전자집적회로');
+ INSERT INTO exp_goods_asia VALUES ('한국', 4, '선박');
+ INSERT INTO exp_goods_asia VALUES ('한국', 5, 'LCD');
+ INSERT INTO exp_goods_asia VALUES ('한국', 6, '자동차부품');
+ INSERT INTO exp_goods_asia VALUES ('한국', 7, '휴대전화');
+ INSERT INTO exp_goods_asia VALUES ('한국', 8, '환식탄화수소');
+ INSERT INTO exp_goods_asia VALUES ('한국', 9, '무선송신기 디스플레이 부속품');
+ INSERT INTO exp_goods_asia VALUES ('한국', 10, '철 또는 비합금강');
+ 
+ INSERT INTO exp_goods_asia VALUES ('일본', 1, '자동차');
+ INSERT INTO exp_goods_asia VALUES ('일본', 2, '자동차부품');
+ INSERT INTO exp_goods_asia VALUES ('일본', 3, '전자집적회로');
+ INSERT INTO exp_goods_asia VALUES ('일본', 4, '선박');
+ INSERT INTO exp_goods_asia VALUES ('일본', 5, '반도체웨이퍼');
+ INSERT INTO exp_goods_asia VALUES ('일본', 6, '화물차');
+ INSERT INTO exp_goods_asia VALUES ('일본', 7, '원유제외 석유류');
+ INSERT INTO exp_goods_asia VALUES ('일본', 8, '건설기계');
+ INSERT INTO exp_goods_asia VALUES ('일본', 9, '다이오드, 트렌지스터');
+ INSERT INTO exp_goods_asia VALUES ('일본', 10, '기계류');
+ 
+ COMMIT;
+ 
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ ORDER BY SEQ;
+ 
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본'
+ ORDER BY SEQ;
+ 
+ --중복되는 품목은 한번만 조회되도록 = UNION 사용
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ UNION
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본'; 
+ 
+--UNION ALL: UNION과 비슷/ 중복된 항목도 모두 조회
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ UNION ALL
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본';
+ 
+--INTERSECT: 교집합/ 데이터집합에서 공통된 항목만 추출
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ INTERSECT
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본';
+ 
+--MINUS: 차집합/ 공통된 항목을 제외한 선행쿼리의 결과만 추출
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ MINUS
+ SELECT GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본';
+ 
+ 
+--집합 연산자의 제한사항
+--1.집합 연산자로 연결되는 각 SELECT문의 SELECT 리스트의 개수와 데이터 타입은 일치해야함
+ SELECT SEQ,GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '한국'
+ UNION
+ SELECT SEQ, GOODS
+   FROM exp_goods_asia
+ WHERE COUNTRY = '일본'; 
+ --품목은 중복되도 SEQ번호가 다르므로 중복으로 인식안함
+ 
+--2.집합 연산자로 SELECT 문을 연결할 때 ORDER BY절은 맨 마지막 문자에서만 사용 가능
+--3.BLOB, CLOB, BFILE 타입의 컬럼에 대해서는 집합 연산자 사용 불가능
+--4.UNION, INTERSECT, MINUS 연산자는 LONG형 컬럼에는 사용 불가능
+
+
+--GROUPING SETS절
+ SELECT PERIOD, GUBUN, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2013%'
+ GROUP BY GROUPING SETS (PERIOD, GUBUN);
+ 
+ SELECT PERIOD, GUBUN, REGION, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2013%'
+   AND REGION IN ('서울', '경기')
+ GROUP BY GROUPING SETS (PERIOD, (GUBUN, REGION));
+ 
+ 
+--QUIZ_chap05_ex1
+--1.EMPLOYEE 테이블에서 입사년도 별 사원수를 구하는 쿼리 작성
+ SELECT TO_CHAR(HIREDATE, 'YYYY'), COUNT(*)
+   FROM EMPLOYEES
+ GROUP BY TO_CHAR(HIREDATE, 'YYYY');
+   
+--2.KOR_LOAN_STATUS 테이블에서 2012년도 월별, 지역별 대출 총 잔액 구하는 쿼리 작성
+ SELECT PERIOD, REGION, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2012%'
+ GROUP BY PERIOD, REGION
+ ORDER BY REGION;
+
+--3.제시된 쿼리(분할ROLLUP) 확인/ 집합연산자를 사용해서 동일한 결과 출력
+ SELECT PERIOD, GUBUN, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2013%'
+ GROUP BY PERIOD, ROLLUP(GUBUN);
+ --집합연산자 사용
+ SELECT PERIOD, GUBUN, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2013%'
+ GROUP BY PERIOD, GUBUN
+ UNION
+ --SELECT PERIOD, ' ', SUM(LOAN_JAN_AMT) TOTL_JAN
+ SELECT PERIOD, NULL, SUM(LOAN_JAN_AMT) TOTL_JAN
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD LIKE '2013%'
+ GROUP BY PERIOD;
+ 
+--4.제시된 쿼리 확인/ 집합연산자를 사용해서 동일한 결과 출력 
+ SELECT PERIOD,
+    CASE WHEN GUBUN = '주택담보대출' THEN SUM(LOAN_JAN_AMT) ELSE 0 END 주택담보대출액,
+    CASE WHEN GUBUN = '기타대출' THEN SUM(LOAN_JAN_AMT) ELSE 0 END 기타대출액
+   FROM KOR_LOAN_STATUS
+ WHERE PERIOD = '201311'
+ GROUP BY PERIOD, GUBUN;
+ --집합연산자사용
+ SELECT PERIOD, 0 주택담보대출액, SUM(LOAN_JAN_AMT) AS 기타대출액
+   FROM KOR_LOAN_STATUS
+ WHERE GUBUN = '기타대출'
+    AND PERIOD = '201311'
+ GROUP BY PERIOD, GUBUN
+ UNION ALL
+ SELECT PERIOD, SUM(LOAN_JAN_AMT) AS 주택담보대출액, 0 기타대출액
+   FROM KOR_LOAN_STATUS
+ WHERE GUBUN = '주택담보대출'
+    AND PERIOD = '201311'
+ GROUP BY PERIOD, GUBUN;
+ 
+--5.지역과 각 월별 대출총잔액을 구하는 쿼리 작성
+--UNION.......?
+ SELECT REGION AS 지역,  
+    SUM(CASE WHEN PERIOD = '201111' THEN LOAN_JAN_AMT END) AS "201111",
+    SUM(CASE WHEN PERIOD = '201112' THEN LOAN_JAN_AMT END) AS "201112",
+    SUM(CASE WHEN PERIOD = '201210' THEN LOAN_JAN_AMT END) AS "201210",
+    SUM(CASE WHEN PERIOD = '201211' THEN LOAN_JAN_AMT END) AS "201211",
+    SUM(CASE WHEN PERIOD = '201212' THEN LOAN_JAN_AMT END) AS "201212",
+    SUM(CASE WHEN PERIOD = '201311' THEN LOAN_JAN_AMT END) AS "201311",
+    SUM(CASE WHEN PERIOD = '201312' THEN LOAN_JAN_AMT END) AS "201312"    
+   FROM KOR_LOAN_STATUS;
+
+--TEACHER
+ SELECT REGION AS 지역,
+        SUM(AMT1) AS "201111",
+        SUM(AMT1) AS "201112",
+        SUM(AMT1) AS "201210",
+        SUM(AMT1) AS "201211",
+        SUM(AMT1) AS "201212",
+        SUM(AMT1) AS "201311",
+        SUM(AMT1) AS "201312" 
+   FROM ( SELECT REGION,
+    CASE WHEN PERIOD = '201111' THEN LOAN_JAN_AMT ELSE 0 END AMT1,
+    CASE WHEN PERIOD = '201112' THEN LOAN_JAN_AMT ELSE 0 END AMT2,
+    CASE WHEN PERIOD = '201210' THEN LOAN_JAN_AMT ELSE 0 END AMT3,
+    CASE WHEN PERIOD = '201211' THEN LOAN_JAN_AMT ELSE 0 END AMT4,
+    CASE WHEN PERIOD = '201212' THEN LOAN_JAN_AMT ELSE 0 END AMT5,
+    CASE WHEN PERIOD = '201311' THEN LOAN_JAN_AMT ELSE 0 END AMT6,
+    CASE WHEN PERIOD = '201312' THEN LOAN_JAN_AMT ELSE 0 END AMT7
+    FROM KOR_LOAN_STATUS )
+ GROUP BY REGION
+ ORDER BY REGION;
+ 
+ 
+ --chap06--
+ 
+ --<조인>
+ --동등조인(EQUI JOIN): 일반적인 조인방법/ 
+ -- 조인조건은 컬럼단위로 기술/ WHERE 절에서 등호 연산자를 사용해 연결한 조인 = 조인조건
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, A.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+        DEPARTMENTS B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID;
+ 
+ --세미조인(SEMI JOIN): 서브쿼리에서 존재하는 데이터만 메인쿼리에서 추출하는 조인
+ --             WHERE절에서 IN과 EXISTS 연산자를 사용한 조인방법
+ --EXISTS사용
+ SELECT DEPARTMENT_ID, DEPARTMENT_NAME
+   FROM DEPARTMENTS A
+ WHERE EXISTS(SELECT *
+                FROM EMPLOYEES B
+              WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+                AND B.SALARY > 3000 )
+ ORDER BY A.DEPARTMENT_NAME;
+ 
+ --IN 사용
+ SELECT DEPARTMENT_ID, DEPARTMENT_NAME
+   FROM DEPARTMENTS A
+ WHERE A.DEPARTMENT_ID IN (SELECT B.DEPARTMENT_ID
+                             FROM EMPLOYEES B
+                            WHERE B.SALARY > 3000 )
+ ORDER BY DEPARTMENT_NAME;
+ 
+ --동등조인과 비교
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A, EMPLOYEES B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+    AND B.SALARY > 3000
+ ORDER BY A.DEPARTMENT_NAME;
+ 
+ 
+ --안티조인(ANTI JOIN): 서브쿼리 B 테이블에 없는 메인쿼리 A 테이블의 데이터만 추출
+ --(세미조인과 반대개념)/ NOT IN, NOT EXISTS 연산자 사용
+ --NOT IN사용
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, A.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+        DEPARTMENTS B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+    AND A.DEPARTMENT_ID NOT IN (SELECT DEPARTMENT_ID
+                                  FROM DEPARTMENTS
+              WHERE MANAGER_ID IS NOT NULL );
+              
+ --NOT EXISTS 연산자 사용
+ SELECT COUNT(*)
+   FROM EMPLOYEES A
+ WHERE NOT EXISTS(SELECT 1
+                    FROM DEPARTMENTS C
+                  WHERE A.DEPARTMENT_ID = C.DEPARTMENT_ID
+                     AND MANAGER_ID IS NULL );
+                     
+ --셀프조인(SELF JOIN): 동일한 테이블을 사용해 조인하는 방법
+ --                    SELECT 에서 컬럼에 별칭 지정가능(AS)
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.EMPLOYEE_ID, B.EMP_NAME, A.DEPARTMENT_ID
+   FROM EMPLOYEES A,
+        EMPLOYEES B
+ WHERE A.EMPLOYEE_ID < B.EMPLOYEE_ID
+    AND A.DEPARTMENT_ID = B.DEPARTMENT_ID
+    AND A.DEPARTMENT_ID = 20;
+        
+ --외부조인(OUTER JOIN): 일반조인을 확장한 개념
+ --조인조건에 만족하는 데이터 뿐만 아니라, 어느 한 쪽 테이블에 조인조건에 명시된 컬럼에 값이 없거나
+ --     (NULL 이더라고)해당로우가 아예 없어도 데이터 모두 추출
+ --조인조건에서 데이터가 없는 쪽 테이블의 컬럼 끝에 (+) 붙임/ 조인조건이 여러개일 경우 모든 조인조건에 (+)
+ 
+ --일반조인과 비교
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM DEPARTMENTS A,
+        JOB_HISTORY B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID;
+ 
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM DEPARTMENTS A,
+        JOB_HISTORY B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID (+);
+ 
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM EMPLOYEES A,
+        JOB_HISTORY B
+ WHERE A.EMPLOYEE_ID = B.EMPLOYEE_ID (+)
+    AND A.DEPARTMENT_ID = B.DEPARTMENT_ID (+);
+    
+ 
+ --카타시안조인(CATASIAN PRODUCT): 조인조건이 없는 조인
+ --FROM 절에 A와 B, 2개의 테이블을 명시했을 경우 추출되는 데이터는 A 테이블 데이터 건수 * B 테이블 데이터 건수
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+        DEPARTMENTS B;
+        
+ --ANSI조인: ANSI SQL 문법을 사용한 조인
+ --ANSI 내부조인: FROM절에 INNER JOIN 을 명시/ 조인조건은 ON에 명시
+ --         테이블간 조인조건 외의 다른 조건은 WHERE절에 명시
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+       DEPARTMENTS B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+    AND A.HIRE_DATE >= TO_DATE('2003-01-01', 'YYYY-MM-DD');
+--
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A
+     INNER JOIN DEPARTMENTS B
+     ON (A.DEPARTMENT_ID = B.DEPARTMENT_ID)
+ WHERE A.HIRE_DATE >= TO_DATE('2003-01-01', 'YYYY-MM-DD');
+--USING절사용(SELECT문에 DEPARTMENT_ID 테이블네임 사용 불가)
+SELECT A.EMPLOYEE_ID, A.EMP_NAME, DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A
+     INNER JOIN DEPARTMENTS B
+     USING (DEPARTMENT_ID)
+ WHERE A.HIRE_DATE >= TO_DATE('2003-01-01', 'YYYY-MM-DD');
+ 
+ 
+ --ANSI 외부조인: FROM절에 LEFT(RIGHT)[OUTER] JOIN 명시/ 조인조건은 ON절에 명시
+ -- 일반 외부조인에서는 기준 테이블과 대상 테이블(데이터가 없는 테이블)에서 대상 테이블쪽 조인조건에 (+)를 붙였지만,
+ -- ANSI외부조인은 FROM절에 명시된 테이블 순서에 입각해 먼저 명시된 테이블 기준으로 LEFT 혹은 RIGHT를 붙임
+ --(OUTER)생략가능
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM DEPARTMENTS A,
+        JOB_HISTORY B
+ WHERE A.EMPLOYEE_ID = B.EMPLOYEE_ID (+)
+    AND A.DEPARTMENT_ID = B.DEPARTMENT_ID (+);
+--
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM EMPLOYEES A
+    LEFT OUTER JOIN JOB_HISTORY B
+    ON (A.EMPLOYEE_ID = B.EMPLOYEE_ID 
+        AND A.DEPARTMENT_ID = B.DEPARTMENT_ID );
+--
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+   FROM JOB_HISTORY B
+    RIGHT OUTER JOIN EMPLOYEES A
+    ON (A.EMPLOYEE_ID = B.EMPLOYEE_ID 
+        AND A.DEPARTMENT_ID = B.DEPARTMENT_ID );
+        
+ --ANSI CROSS조인: 카타시안조인(조인조건없는조인)을 ANSI조인에서는 CROSS조인이라 함
+ --                 FROM절에 CROSS JOIN 명시
+ --(카타시안조인)
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+        DEPARTMENTS B;
+ --(ANSI CROSS조인)
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.DEPARTMENT_ID, B.DEPARTMENT_NAME
+   FROM EMPLOYEES A
+   CROSS JOIN DEPARTMENTS B;
+   
+
+ --ANSI FULL OUTER 조인: 외부조인의 하나로 ANSI조인에서만 제공하는 기능
+ -- 일반적인 외부조인은 두 테이블 중 어느 한 테이블에 조인조건에 만족하는 데이터가 없더라도 
+ --     두 테이블 데이터 모두 조회되는 조인 -> 한쪽이빨이 빠진 형태
+ -- 한쪽 테이블이 아닌 두 테이블 모두 데이터가 없는경우, 두 쪽 테이블 모두 이빨이 빠진 형태의 결과가 추출되는 외부조인
+ --     =FULL OUTER JOIN
+ -- 조인조건을 기준으로 두 테이블 중 어느 한쪽에만 데이터가 있으면 조회됨
+ CREATE TABLE LEE_A (EMP_ID INT);
+ CREATE TABLE LEE_B (EMP_ID INT);
+ 
+ INSERT INTO LEE_A VALUES( 10);
+ INSERT INTO LEE_A VALUES( 20);
+ INSERT INTO LEE_A VALUES( 40);
+ 
+ INSERT INTO LEE_B VALUES( 10);
+ INSERT INTO LEE_B VALUES( 20);
+ INSERT INTO LEE_B VALUES( 30);
+ 
+ COMMIT;
+ 
+ SELECT A.EMP_ID, B.EMP_ID
+   FROM LEE_A A,
+        LEE_B B
+ WHERE A.EMP_ID(+) = B.EMP_ID(+);
+
+ SELECT A.EMP_ID, B.EMP_ID
+   FROM LEE_A A
+   FULL OUTER JOIN LEE_B B
+   ON(A.EMP_ID = B.EMP_ID);
+   
+   
+ --QUIZ_chap06_ex1
+ --1.101번 사원에 대해 결과 산출(사번, 사원명, JOB명칭, JOB시작일자, JOB종료일자, JOB수행부서명)
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, J.JOB_TITLE, H.START_DATE, H.END_DATE, D.DEPARTMENT_NAME
+   FROM EMPLOYEES A,
+        JOB_HISTORY H,
+        DEPARTMENTS D,
+        JOBS J
+WHERE A.EMPLOYEE_ID = J.EMPLOYEE_ID
+    AND J.DEPARTMENT_ID = D.DEPARTMENT_ID
+    AND J.JOB_ID = D.JOB_ID
+    AND A.EMPLOYEE_ID = 101;
+
+ --2.제시된 쿼리의 오류 원인 찾기
+--SELECTA.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+-- FROM EMPLOYEES A,
+--      JOB_HISTORY B
+-- WHEREA.EMPLOYEE_ID = B.EMPLOYEE_ID(+)
+-- ANDA.DEPARTMENT_ID(+) = B.DEPARTMENT_ID;
+ --수정 
+ SELECT A.EMPLOYEE_ID, A.EMP_NAME, B.JOB_ID, B.DEPARTMENT_ID
+ FROM EMPLOYEES A,
+      JOB_HISTORY B
+ WHERE A.EMPLOYEE_ID = B.EMPLOYEE_ID(+)
+ AND A.DEPARTMENT_ID = B.DEPARTMENT_ID(+);
+
+--3.다음 쿼리를 ANSI 문법으로 변경
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A, EMPLOYEES B
+ WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID
+    AND B.SALARY > 3000
+ ORDER BY A.DEPARTMENT_NAME;
+ 
+ --ANSI 문법
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A
+     INNER JOIN EMPLOYEES B
+   ON (A.DEPARTMENT_ID = B.DEPARTMENT_ID)
+    WHERE B.SALARY > 3000
+ ORDER BY A.DEPARTMENT_NAME;
+
+--4.연관성 있는 서브쿼리를 연관성 없는 서브쿼리로 변환하기
+ SELECT A.DEPARTMENT_ID, A.DEPARTMENT_NAME
+   FROM DEPARTMENTS A
+ WHERE EXISTS (SELECT 1
+                 FROM JOB_HISTORY B
+                WHERE A.DEPARTMENT_ID = B.DEPARTMENT_ID );
+                
+ --연관성 없는 서브쿼리
+ SELECT DEPARTMENT_ID, DEPARTMENT_NAME
+   FROM DEPARTMENTS
+ WHERE (DEPARTMENT_ID, DEPARTMENT_NAME) IN (SELECT DEPARTMENT_ID, DEPARTMENT_NAME
+                                              FROM JOB_HISTORY);
+
+--5.연도별 이태리 최대매출액과 사원을 작성하는 쿼리를 기준으로
+--  최대 매출액 뿐만 아니라 최소 매출액과 해당 사원을 조회하는 쿼리 작성하기
+--1>연도별, 사원별, 매출액계산
+ SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+        A. EMPLOYEE_ID, 
+        SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+   FROM SALES A,
+        CUSTOMERS B,
+        COUNTRIES C
+  WHERE A.CUST_ID = B.CUST_ID
+      AND B.COUNTRY_ID = C.COUNTRY_ID
+      AND C.COUNTRY_NAME = 'Italy'  
+ GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID
+ ORDER BY YEARS;
+ 
+ --2>연도별 최대매출액, 최소매출액 
+ SELECT YEARS, MAX(AMOUNT_SOLD) AS MAX_SOLD, MIN(AMOUNT_SOLD) AS MIN_SOLD
+   FROM (SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+            A.EMPLOYEE_ID, SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.CUST_ID = B.CUST_ID
+              AND B.COUNTRY_ID = C.COUNTRY_ID
+              AND C.COUNTRY_NAME = 'Italy' 
+         GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID ) K
+ GROUP BY YEARS
+ ORDER BY YEARS;
+   
+ --3번의 결과와 사원테이블 조인해서 사원 이름 출력
+ SELECT EMP.YEARS, 
+       EMP.EMPLOYEE_ID,
+       EMP2.EMP_NAME,
+       EMP.AMOUNT_SOLD
+  FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                A.EMPLOYEE_ID, 
+                SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+           FROM SALES A,
+                CUSTOMERS B,
+                COUNTRIES C
+          WHERE A.CUST_ID = B.CUST_ID
+            AND B.COUNTRY_ID = C.COUNTRY_ID
+            AND C.COUNTRY_NAME = 'Italy'     
+          GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID   
+        ) EMP,
+       ( SELECT  YEARS, 
+                 MAX(AMOUNT_SOLD) AS MAX_SOLD, MIN(AMOUNT_SOLD) AS MIN_SOLD
+          FROM ( SELECT SUBSTR(A.SALES_MONTH, 1, 4) AS YEARS,
+                        A.EMPLOYEE_ID, 
+                        SUM(A.AMOUNT_SOLD) AS AMOUNT_SOLD
+                   FROM SALES A,
+                        CUSTOMERS B,
+                        COUNTRIES C
+                  WHERE A.CUST_ID = B.CUST_ID
+                    AND B.COUNTRY_ID = C.COUNTRY_ID
+                    AND C.COUNTRY_NAME = 'Italy'     
+                  GROUP BY SUBSTR(A.SALES_MONTH, 1, 4), A.EMPLOYEE_ID    
+               ) 
+          GROUP BY YEARS
+       ) SALE,
+       EMPLOYEES EMP2
+  WHERE EMP.YEARS = SALE.YEARS
+    AND (EMP.AMOUNT_SOLD = SALE.MAX_SOLD 
+            OR EMP.AMOUNT_SOLD = SALE.MIN_SOLD)
+    AND EMP.EMPLOYEE_ID = EMP2.EMPLOYEE_ID
+ORDER BY YEARS;
+ 
+ 
+ 
+
+ 
+ 
+    
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
